@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Karbana Studio IDE - Local IndexedDB Workspace & Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --mint-primary: #42BA96;
+            --mint-hover: #369b7c;
+            --mint-dark: #1e2229;
+            --mint-surface: rgba(30, 34, 41, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-main: #e2e8f0;
+        }
+        body {
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            height: 100dvh;
+            overflow: hidden;
+        }
+        .glass-panel {
+            background: var(--mint-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(66, 186, 150, 0.3);
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(66, 186, 150, 0.6);
+        }
+        button, input, select {
+            min-height: 48px;
+        }
+        @media (max-width: 768px) {
+            .desktop-only { display: none !important; }
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden">
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-200%] transition-transform duration-300 glass-panel px-4 py-3 rounded-xl border border-[#42BA96] text-sm text-emerald-300 shadow-2xl flex items-center gap-3">
+        <svg class="w-5 h-5 text-[#42BA96]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span id="toast-message">Operasjon fullført</span>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="glass-panel border-b border-[#ffffff12] px-4 py-3 flex items-center justify-between shrink-0 z-40">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#42BA96] to-[#20755b] flex items-center justify-center shadow-lg shadow-emerald-900/40 text-slate-950 font-black text-xl">
+                K
+            </div>
+            <div>
+                <h1 class="font-bold text-base text-slate-100 tracking-wide flex items-center gap-2">
+                    Karbana Studio IDE <span class="text-xs px-2 py-0.5 rounded-full bg-[#42BA96]/20 text-[#42BA96] border border-[#42BA96]/30">v2.0</span>
+                </h1>
+                <p class="text-xs text-slate-400">IndexedDB Workspace & Terminal</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button onclick="toggleMobileMenu()" class="md:hidden p-3 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <div class="desktop-only flex items-center gap-2">
+                <button onclick="switchTab('workspace')" id="nav-btn-workspace" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-[#42BA96] text-slate-950 shadow-lg shadow-emerald-900/30">Editor & Workspace</button>
+                <button onclick="switchTab('git')" id="nav-btn-git" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-300 hover:bg-slate-800/60">Git Repository</button>
+                <button onclick="switchTab('database')" id="nav-btn-database" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-300 hover:bg-slate-800/60">Database Inspector</button>
+                <button onclick="switchTab('terminal')" id="nav-btn-terminal" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-300 hover:bg-slate-800/60">Terminal</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobile-menu" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col p-6 hidden">
+        <div class="flex justify-between items-center mb-6">
+            <span class="font-bold text-lg text-[#42BA96]">Karbana Meny</span>
+            <button onclick="toggleMobileMenu()" class="p-3 bg-slate-800 rounded-xl text-slate-200">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="flex flex-col gap-3">
+            <button onclick="switchTab('workspace'); toggleMobileMenu();" class="w-full py-3 rounded-xl bg-[#42BA96] text-slate-950 font-bold text-left px-4">Editor & Workspace</button>
+            <button onclick="switchTab('git'); toggleMobileMenu();" class="w-full py-3 rounded-xl bg-slate-800 text-slate-200 font-bold text-left px-4">Git Repository</button>
+            <button onclick="switchTab('database'); toggleMobileMenu();" class="w-full py-3 rounded-xl bg-slate-800 text-slate-200 font-bold text-left px-4">Database Inspector</button>
+            <button onclick="switchTab('terminal'); toggleMobileMenu();" class="w-full py-3 rounded-xl bg-slate-800 text-slate-200 font-bold text-left px-4">Terminal</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-hidden relative p-3 md:p-4 max-w-[1700px] w-full mx-auto flex flex-col">
+
+        <!-- TAB 1: WORKSPACE & EDITOR -->
+        <div id="tab-workspace" class="h-full flex flex-col md:flex-row gap-3 overflow-hidden">
+            <!-- File Tree Explorer -->
+            <div class="glass-panel rounded-2xl p-4 md:w-80 flex flex-col shrink-0 h-1/3 md:h-full">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-[#42BA96] flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                        Prosjektfiler (.html, .md, .js, .jsx, .sql)
+                    </h2>
+                    <button onclick="openNewFileDialog()" class="px-3 py-1.5 bg-[#42BA96] text-slate-950 rounded-xl text-xs font-bold hover:opacity-90 shadow-md">
+                        + Ny
+                    </button>
+                </div>
+                <div id="file-tree" class="flex-1 overflow-y-auto custom-scrollbar space-y-1 pr-1">
+                    <!-- File tree items -->
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-700/50 text-xs text-slate-400 flex justify-between items-center">
+                    <span id="file-count">0 filer</span>
+                    <button onclick="seedInitialFiles()" class="text-[#42BA96] underline hover:text-emerald-300">Last demofilene</button>
+                </div>
+            </div>
+
+            <!-- Editor / Preview Panel -->
+            <div class="glass-panel rounded-2xl flex-1 flex flex-col overflow-hidden h-2/3 md:h-full">
+                <!-- Toolbar & Tabs -->
+                <div class="px-4 py-2.5 bg-slate-900/40 border-b border-slate-700/50 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 overflow-x-auto">
+                        <span id="active-filename" class="font-mono text-sm font-semibold text-slate-200">Ingen fil valgt</span>
+                        <span id="file-dirty" class="hidden text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Ulagret</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="setViewMode('code')" id="mode-code-btn" class="px-3 py-1.5 bg-[#42BA96] text-slate-950 text-xs font-bold rounded-xl transition-all">Kode</button>
+                        <button onclick="setViewMode('preview')" id="mode-preview-btn" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl transition-all border border-slate-600">Forhåndsvisning</button>
+                        <button onclick="saveCurrentFile()" class="px-4 py-1.5 bg-[#42BA96] hover:bg-[#369b7c] text-slate-950 text-xs font-bold rounded-xl shadow-md flex items-center gap-1">
+                            Lagre
+                        </button>
+                        <button onclick="stageCurrentFile()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-bold rounded-xl">
+                            Git Stage
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Editor Container -->
+                <div id="editor-container" class="flex-1 relative flex flex-col overflow-hidden">
+                    <textarea id="code-editor" class="flex-1 bg-slate-950/90 text-emerald-300 font-mono text-sm p-4 resize-none outline-none custom-scrollbar leading-relaxed" placeholder="Velg en fil fra treet til venstre for å redigere..." oninput="markDirty()"></textarea>
+                </div>
+
+                <!-- Live Preview Container (HTML/Markdown/React rendered) -->
+                <div id="preview-container" class="flex-1 hidden bg-white text-slate-900 overflow-y-auto p-4 relative">
+                    <iframe id="preview-frame" class="w-full h-full border-0"></iframe>
+                </div>
+
+                <div class="px-4 py-2 bg-slate-900/60 border-t border-slate-700/50 text-xs text-slate-400 flex justify-between items-center">
+                    <span id="editor-status">Klar - IndexedDB aktiv</span>
+                    <span id="file-type-badge">Type: -</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: GIT REPOSITORY -->
+        <div id="tab-git" class="h-full hidden flex flex-col gap-4 overflow-y-auto custom-scrollbar pb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-base font-bold text-[#42BA96] mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            Git Status
+                        </h2>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between py-1 border-b border-slate-700/50">
+                                <span class="text-slate-400">Aktiv Branch:</span>
+                                <span id="git-branch" class="font-bold text-[#42BA96]">main</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-slate-700/50">
+                                <span class="text-slate-400">Siste Commit:</span>
+                                <span id="git-last-commit" class="font-mono text-slate-200">Ingen ennå</span>
+                            </div>
+                            <div class="flex justify-between py-1">
+                                <span class="text-slate-400">Staged Filer:</span>
+                                <span id="git-staged-count" class="font-bold text-amber-400">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-700/50 flex gap-2">
+                        <button onclick="createNewBranch()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-xl text-xs font-bold">Ny Branch</button>
+                        <button onclick="resetGitRepo()" class="py-2 px-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-xl text-xs font-bold">Nullstill</button>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-5 md:col-span-2 flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-base font-bold text-[#42BA96] mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Ny Commit i IndexedDB Object Store
+                        </h2>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Commit Melding</label>
+                                <input type="text" id="commit-msg" placeholder="f.eks. Oppdater README.md og React komponent" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:border-[#42BA96] outline-none">
+                            </div>
+                            <div id="staged-files-preview" class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs font-mono text-slate-300 max-h-24 overflow-y-auto">
+                                Ingen filer storsatt.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-700/50 flex justify-end gap-3">
+                        <button onclick="stageAllFiles()" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-xl text-xs font-bold">Stage Alle Filer</button>
+                        <button onclick="commitChanges()" class="py-2.5 px-6 bg-[#42BA96] hover:bg-[#369b7c] text-slate-950 rounded-xl text-xs font-bold shadow-lg shadow-emerald-900/30">Commit Endringer</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-5 flex-1 flex flex-col">
+                <h2 class="text-base font-bold text-[#42BA96] mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Commit Historikk
+                </h2>
+                <div id="commit-log-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+                    <!-- Commits loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: DATABASE INSPECTOR -->
+        <div id="tab-database" class="h-full hidden flex flex-col gap-4 overflow-y-auto custom-scrollbar pb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="glass-panel rounded-2xl p-5">
+                    <h2 class="text-base font-bold text-[#42BA96] mb-2">IndexedDB Databaser</h2>
+                    <p class="text-xs text-slate-400 mb-4">Navn: <code class="text-emerald-300">KarbanaStudioDB</code></p>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between p-2 bg-slate-900/60 rounded-xl">
+                            <span>Object Stores:</span>
+                            <span class="font-bold text-slate-200">files, git_commits, git_staging</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-900/60 rounded-xl">
+                            <span>Versjon:</span>
+                            <span class="font-bold text-slate-200">1</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-2xl p-5 md:col-span-2 flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-base font-bold text-[#42BA96] mb-2">SQL / JSON Databasetabell Inspector</h2>
+                        <p class="text-xs text-slate-400 mb-3">Inspiser tabeller definert i workspace (`.sql` eller `.json`).</p>
+                        <select id="db-table-select" onchange="inspectDatabaseTable()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none">
+                            <option value="users">users (Mock SQL Table)</option>
+                            <option value="settings">settings (JSON Store)</option>
+                        </select>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-700/50 flex justify-end">
+                        <button onclick="seedDatabaseTable()" class="py-2 px-4 bg-[#42BA96] text-slate-950 text-xs font-bold rounded-xl">Tilbakestill Tabell</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-5 flex-1 flex flex-col">
+                <h2 class="text-base font-bold text-[#42BA96] mb-3">Tabell Data Innhold</h2>
+                <div id="db-table-view" class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar bg-slate-950/80 rounded-xl p-4 font-mono text-xs text-slate-300">
+                    <!-- Data table rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: EMBEDDED TERMINAL -->
+        <div id="tab-terminal" class="h-full hidden flex flex-col gap-4 overflow-hidden">
+            <div class="glass-panel rounded-2xl p-5 flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-base font-bold text-[#42BA96] flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Karbana Studio Terminal (Innebygd)
+                    </h2>
+                    <span class="text-xs text-slate-400">Skriv <code class="text-emerald-300">help</code> for kommandoer</span>
+                </div>
+                <div id="terminal-screen" class="flex-1 bg-slate-950/95 rounded-xl p-4 font-mono text-xs text-emerald-400 overflow-y-auto custom-scrollbar space-y-1.5 leading-relaxed">
+                    <div>Karbana Studio Terminal v2.0 (x86_64-browser-wasm)</div>
+                    <div>Skriv <span class="text-amber-300">help</span> for å se tilgjengelige kommandoer (ls, cat, git, npm, run, clear).</div>
+                    <br>
+                </div>
+                <div class="mt-3 flex items-center gap-2">
+                    <span class="text-[#42BA96] font-mono text-xs font-bold">karbana@studio:~$</span>
+                    <input type="text" id="terminal-input" onkeydown="handleTerminalKey(event)" placeholder="Skriv kommando her..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-100 outline-none focus:border-[#42BA96]">
+                    <button onclick="executeTerminalCommand()" class="px-5 py-2.5 bg-[#42BA96] text-slate-950 font-bold text-xs rounded-xl shadow-md">Kjør</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- New File Modal -->
+    <div id="new-file-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-panel rounded-2xl p-6 max-w-md w-full border border-slate-700 shadow-2xl">
+            <h3 class="text-lg font-bold text-[#42BA96] mb-4">Opprett ny fil</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Filnavn (eks. index.html, README.md, App.jsx, script.js, schema.sql)</label>
+                    <input type="text" id="new-filename-input" placeholder="app.jsx" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:border-[#42BA96] outline-none font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Innhold</label>
+                    <textarea id="new-file-content" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:border-[#42BA96] outline-none font-mono" placeholder="// Skriv innhold her..."></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="closeNewFileDialog()" class="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold border border-slate-600">Avbryt</button>
+                <button onclick="createFile()" class="px-5 py-2.5 bg-[#42BA96] text-slate-950 rounded-xl text-xs font-bold shadow-md">Opprett</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const DB_NAME = 'KarbanaStudioDB';
+        const DB_VERSION = 1;
+        let db = null;
+
+        let activeFile = null;
+        let isDirty = false;
+        let currentBranch = 'main';
+        let currentViewMode = 'code';
+
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onerror = (event) => {
+                    logTerminal('Feil ved åpning av IndexedDB: ' + event.target.errorCode);
+                    reject(event.target.errorCode);
+                };
+
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    resolve(db);
+                    loadFiles();
+                    loadGitCommits();
+                    updateFileCount();
+                };
+
+                request.onupgradeneeded = (event) => {
+                    const database = event.target.result;
+                    if (!database.objectStoreNames.contains('files')) {
+                        database.createObjectStore('files', { keyPath: 'name' });
+                    }
+                    if (!database.objectStoreNames.contains('git_commits')) {
+                        database.createObjectStore('git_commits', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!database.objectStoreNames.contains('git_staging')) {
+                        database.createObjectStore('git_staging', { keyPath: 'name' });
+                    }
+                };
+            });
+        }
+
+        function switchTab(tabId) {
+            ['workspace', 'git', 'database', 'terminal'].forEach(id => {
+                const el = document.getElementById(`tab-${id}`);
+                const btn = document.getElementById(`nav-btn-${id}`);
+                if (id === tabId) {
+                    el.classList.remove('hidden');
+                    if(btn) btn.className = "px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-[#42BA96] text-slate-950 shadow-lg shadow-emerald-900/30";
+                } else {
+                    el.classList.add('hidden');
+                    if(btn) btn.className = "px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-300 hover:bg-slate-800/60";
+                }
+            });
+            if (tabId === 'git') updateStagedPreview();
+            if (tabId === 'database') inspectDatabaseTable();
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        function logTerminal(msg) {
+            const screen = document.getElementById('terminal-screen');
+            const time = new Date().toLocaleTimeString();
+            screen.innerHTML += `<div>[${time}] ${msg}</div>`;
+            screen.scrollTop = screen.scrollHeight;
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('translate-y-[-200%]');
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-200%]');
+            }, 3000);
+        }
+
+        // --- Seed Default Files ---
+        function seedInitialFiles() {
+            if (!db) return;
+            const files = [
+                {
+                    name: 'index.html',
+                    content: '<!DOCTYPE html>\n<html>\n<head>\n  <title>Karbana App</title>\n  <script src="https://cdn.tailwindcss.com"><\/script>\n</head>\n<body class="p-6 bg-slate-900 text-white">\n  <h1 class="text-2xl font-bold text-emerald-400">Hei fra Karbana HTML!</h1>\n  <p class="mt-2 text-slate-300">Dette kjører direkte i nettleserens IndexedDB.</p>\n</body>\n</html>'
+                },
+                {
+                    name: 'README.md',
+                    content: '# Karbana Studio IDE\n\nVelkommen til den fullstendige nettleserbaserte IDEen.\n\n## Funksjoner\n- IndexedDB fil- og Git-lagring\n- Støtte for .html, .md, .js, .jsx, .sql\n- Innebygd terminal og database-inspector'
+                },
+                {
+                    name: 'script.js',
+                    content: 'console.log("Karbana Studio JavaScript kjører...");\n\nfunction calculateSum(a, b) {\n    return a + b;\n}\n\nconsole.log("Sum: " + calculateSum(10, 25));'
+                },
+                {
+                    name: 'App.jsx',
+                    content: 'import React, { useState } from "react";\n\nexport default function App() {\n    const [count, setCount] = useState(0);\n    return (\n        <div className="p-6 bg-slate-900 text-white rounded-2xl shadow-xl">\n            <h2 className="text-xl font-bold text-emerald-400">React Komponent i Karbana</h2>\n            <p className="mt-2">Teller: {count}</p>\n            <button onClick={() => setCount(count + 1)} className="mt-4 px-4 py-2 bg-emerald-500 text-slate-950 font-bold rounded-xl">Øk teller</button>\n        </div>\n    );\n}'
+                },
+                {
+                    name: 'schema.sql',
+                    content: '-- Karbana SQL Database Schema\nCREATE TABLE users (\n    id INT PRIMARY KEY,\n    username VARCHAR(50),\n    email VARCHAR(100)\n);\n\nINSERT INTO users VALUES (1, "karbana_admin", "admin@karbana.dev");\nINSERT INTO users VALUES (2, "developer", "dev@karbana.dev");'
+                }
+            ];
+
+            const tx = db.transaction(['files'], 'readwrite');
+            const store = tx.objectStore('files');
+            files.forEach(f => store.put(f));
+            tx.oncomplete = () => {
+                logTerminal('Lastet standarddemofiler (HTML, Markdown, JS, JSX, SQL).');
+                showToast('Standardfiler lastet!');
+                loadFiles();
+            };
+        }
+
+        function loadFiles() {
+            if (!db) return;
+            const tx = db.transaction(['files'], 'readonly');
+            const store = tx.objectStore('files');
+            store.getAll().onsuccess = (e) => {
+                const files = e.target.result;
+                const treeEl = document.getElementById('file-tree');
+                document.getElementById('file-count').innerText = `${files.length} filer`;
+
+                if (files.length === 0) {
+                    treeEl.innerHTML = `<div class="p-4 text-center text-xs text-slate-500">Ingen filer. Klikk "+ Ny" eller last demofiler.</div>`;
+                    return;
+                }
+
+                treeEl.innerHTML = '';
+                files.forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = `p-2.5 rounded-xl text-xs font-mono cursor-pointer flex items-center justify-between transition-all ${activeFile === file.name ? 'bg-[#42BA96]/20 border border-[#42BA96]/40 text-emerald-300 font-bold' : 'hover:bg-slate-800/60 text-slate-300'}`;
+                    item.innerHTML = `
+                        <span class="truncate pr-2">${getFileIcon(file.name)} ${file.name}</span>
+                        <button onclick="event.stopPropagation(); deleteFile('${file.name}')" class="text-slate-500 hover:text-red-400 p-1">✕</button>
+                    `;
+                    item.onclick = () => selectFile(file.name);
+                    treeEl.appendChild(item);
+                });
+
+                if (!activeFile && files.length > 0) {
+                    selectFile(files[0].name);
+                }
+            };
+        }
+
+        function getFileIcon(filename) {
+            if (filename.endsWith('.html')) return '🌐';
+            if (filename.endsWith('.md')) return '📖';
+            if (filename.endsWith('.js')) return '📜';
+            if (filename.endsWith('.jsx')) return '⚛️';
+            if (filename.endsWith('.sql') || filename.endsWith('.json')) return '🗄️';
+            return '📄';
+        }
+
+        function updateFileCount() {
+            if (!db) return;
+            db.transaction(['files'], 'readonly').objectStore('files').count().onsuccess = (e) => {
+                document.getElementById('file-count').innerText = `${e.target.result} filer`;
+            };
+        }
+
+        function selectFile(filename) {
+            if (isDirty && activeFile) {
+                if (!confirm(`Vil du forkaste ulagrede endringer i ${activeFile}?`)) return;
+            }
+            const tx = db.transaction(['files'], 'readonly');
+            tx.objectStore('files').get(filename).onsuccess = (e) => {
+                const file = e.target.result;
+                if (file) {
+                    activeFile = file.name;
+                    document.getElementById('active-filename').innerText = file.name;
+                    document.getElementById('code-editor').value = file.content;
+                    document.getElementById('file-type-badge').innerText = `Type: ${file.name.split('.').pop().toUpperCase()}`;
+                    isDirty = false;
+                    document.getElementById('file-dirty').classList.add('hidden');
+                    loadFiles();
+                    if (currentViewMode === 'preview') renderPreview();
+                }
+            };
+        }
+
+        function markDirty() {
+            isDirty = true;
+            document.getElementById('file-dirty').classList.remove('hidden');
+        }
+
+        function saveCurrentFile() {
+            if (!activeFile) {
+                showToast('Ingen fil valgt!');
+                return;
+            }
+            const content = document.getElementById('code-editor').value;
+            const tx = db.transaction(['files'], 'readwrite');
+            tx.objectStore('files').put({ name: activeFile, content: content });
+            tx.oncomplete = () => {
+                isDirty = false;
+                document.getElementById('file-dirty').classList.add('hidden');
+                logTerminal(`Lagret fil '${activeFile}' i IndexedDB.`);
+                showToast(`Lagret ${activeFile}`);
+            };
+        }
+
+        function openNewFileDialog() {
+            document.getElementById('new-file-modal').classList.remove('hidden');
+        }
+
+        function closeNewFileDialog() {
+            document.getElementById('new-file-modal').classList.add('hidden');
+            document.getElementById('new-filename-input').value = '';
+            document.getElementById('new-file-content').value = '';
+        }
+
+        function createFile() {
+            const filename = document.getElementById('new-filename-input').value.trim();
+            const content = document.getElementById('new-file-content').value;
+            if (!filename) {
+                alert('Vennligst angir et filnavn.');
+                return;
+            }
+            const tx = db.transaction(['files'], 'readwrite');
+            tx.objectStore('files').put({ name: filename, content: content });
+            tx.oncomplete = () => {
+                logTerminal(`Opprettet ny fil: ${filename}`);
+                showToast(`Opprettet ${filename}`);
+                closeNewFileDialog();
+                loadFiles();
+                selectFile(filename);
+            };
+        }
+
+        function deleteFile(filename) {
+            if (!confirm(`Vil du slette ${filename} fra IndexedDB?`)) return;
+            const tx = db.transaction(['files'], 'readwrite');
+            tx.objectStore('files').delete(filename);
+            tx.oncomplete = () => {
+                logTerminal(`Slettet fil: ${filename}`);
+                showToast(`Slettet ${filename}`);
+                if (activeFile === filename) {
+                    activeFile = null;
+                    document.getElementById('active-filename').innerText = 'Ingen fil valgt';
+                    document.getElementById('code-editor').value = '';
+                }
+                loadFiles();
+            };
+        }
+
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            const codeBtn = document.getElementById('mode-code-btn');
+            const previewBtn = document.getElementById('mode-preview-btn');
+            const editorContainer = document.getElementById('editor-container');
+            const previewContainer = document.getElementById('preview-container');
+
+            if (mode === 'code') {
+                codeBtn.className = "px-3 py-1.5 bg-[#42BA96] text-slate-950 text-xs font-bold rounded-xl transition-all";
+                previewBtn.className = "px-3 py-1.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl transition-all border border-slate-600";
+                editorContainer.classList.remove('hidden');
+                previewContainer.classList.add('hidden');
+            } else {
+                codeBtn.className = "px-3 py-1.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl transition-all border border-slate-600";
+                previewBtn.className = "px-3 py-1.5 bg-[#42BA96] text-slate-950 text-xs font-bold rounded-xl transition-all";
+                editorContainer.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                renderPreview();
+            }
+        }
+
+        function renderPreview() {
+            if (!activeFile) return;
+            const content = document.getElementById('code-editor').value;
+            const frame = document.getElementById('preview-frame');
+            const doc = frame.contentDocument || frame.contentWindow.document;
+
+            if (activeFile.endsWith('.html')) {
+                doc.open();
+                doc.write(content);
+                doc.close();
+            } else if (activeFile.endsWith('.md')) {
+                // Simple Markdown rendering fallback
+                const htmlContent = `<div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">${content.replace(/^# (.*$)/gm, '<h1 style="color:#20755b; font-size:24px; margin-bottom:12px;">$1</h1>').replace(/^## (.*$)/gm, '<h2 style="color:#369b7c; font-size:18px; margin-top:16px; margin-bottom:8px;">$1</h2>').replace(/^- (.*$)/gm, '<li style="margin-left:20px;">$1</li>').replace(/\n/g, '<br>')}</div>`;
+                doc.open();
+                doc.write(htmlContent);
+                doc.close();
+            } else {
+                doc.open();
+                doc.write(`<div style="font-family:monospace; padding:20px; color:#1e2229;"><h3>Forhåndsvisning ikke tilgjengelig for ${activeFile}</h3><pre>${content}</pre></div>`);
+                doc.close();
+            }
+        }
+
+        // --- Git Management ---
+        function stageCurrentFile() {
+            if (!activeFile) {
+                showToast('Velg en fil først');
+                return;
+            }
+            saveCurrentFile();
+            const tx = db.transaction(['files', 'git_staging'], 'readwrite');
+            tx.objectStore('files').get(activeFile).onsuccess = (e) => {
+                const file = e.target.result;
+                if (file) {
+                    tx.objectStore('git_staging').put(file);
+                    logTerminal(`Staged fil: ${activeFile}`);
+                    showToast(`Staged ${activeFile}`);
+                }
+            };
+        }
+
+        function stageAllFiles() {
+            const tx = db.transaction(['files', 'git_staging'], 'readwrite');
+            tx.objectStore('files').getAll().onsuccess = (e) => {
+                e.target.result.forEach(f => tx.objectStore('git_staging').put(f));
+                tx.oncomplete = () => {
+                    logTerminal('Alle filer storsatt.');
+                    showToast('Alle filer storsatt');
+                    updateStagedPreview();
+                };
+            };
+        }
+
+        function updateStagedPreview() {
+            if (!db) return;
+            db.transaction(['git_staging'], 'readonly').objectStore('git_staging').getAll().onsuccess = (e) => {
+                const staged = e.target.result;
+                document.getElementById('git-staged-count').innerText = staged.length;
+                const prev = document.getElementById('staged-files-preview');
+                prev.innerHTML = staged.length === 0 ? 'Ingen filer storsatt.' : staged.map(f => `<div>✓ ${f.name}</div>`).join('');
+            };
+        }
+
+        function commitChanges() {
+            const msg = document.getElementById('commit-msg').value.trim();
+            if (!msg) {
+                alert('Vennligst skriv en commit-melding.');
+                return;
+            }
+            const tx = db.transaction(['git_staging'], 'readonly');
+            tx.objectStore('git_staging').getAll().onsuccess = (e) => {
+                const staged = e.target.result;
+                if (staged.length === 0) {
+                    alert('Ingen filer storsatt.');
+                    return;
+                }
+                const commitObj = {
+                    branch: currentBranch,
+                    message: msg,
+                    files: staged,
+                    timestamp: new Date().toISOString(),
+                    hash: Math.random().toString(16).substring(2, 10)
+                };
+                const commitTx = db.transaction(['git_commits', 'git_staging'], 'readwrite');
+                commitTx.objectStore('git_commits').add(commitObj);
+                commitTx.objectStore('git_staging').clear();
+                commitTx.oncomplete = () => {
+                    logTerminal(`Commit [${commitObj.hash}]: "${msg}"`);
+                    showToast('Commit utført!');
+                    document.getElementById('commit-msg').value = '';
+                    loadGitCommits();
+                    updateStagedPreview();
+                };
+            };
+        }
+
+        function loadGitCommits() {
+            if (!db) return;
+            db.transaction(['git_commits'], 'readonly').objectStore('git_commits').getAll().onsuccess = (e) => {
+                const commits = e.target.result;
+                const list = document.getElementById('commit-log-list');
+                if (commits.length === 0) {
+                    list.innerHTML = `<div class="p-4 text-center text-xs text-slate-500">Ingen commits ennå.</div>`;
+                    document.getElementById('git-last-commit').innerText = 'Ingen ennå';
+                    return;
+                }
+                document.getElementById('git-last-commit').innerText = `${commits[commits.length - 1].hash}`;
+                list.innerHTML = '';
+                commits.reverse().forEach(c => {
+                    list.innerHTML += `
+                        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-700/50 flex flex-col gap-1">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="font-mono font-bold text-[#42BA96]">${c.hash}</span>
+                                <span class="text-slate-400">${new Date(c.timestamp).toLocaleString()}</span>
+                            </div>
+                            <div class="text-sm font-semibold text-slate-200">${c.message}</div>
+                            <div class="text-xs text-slate-400">Branch: <span class="text-emerald-300">${c.branch}</span> | Filer: ${c.files.length}</div>
+                        </div>
+                    `;
+                });
+            };
+        }
+
+        function createNewBranch() {
+            const b = prompt('Ny branch:', 'feature/ui-update');
+            if (b) {
+                currentBranch = b;
+                document.getElementById('git-branch').innerText = currentBranch;
+                logTerminal(`Byttet til branch: ${currentBranch}`);
+                showToast(`Branch: ${currentBranch}`);
+            }
+        }
+
+        function resetGitRepo() {
+            if (!confirm('Nullstill git repository?')) return;
+            const tx = db.transaction(['git_commits', 'git_staging'], 'readwrite');
+            tx.objectStore('git_commits').clear();
+            tx.objectStore('git_staging').clear();
+            tx.oncomplete = () => {
+                logTerminal('Git nullstilt.');
+                showToast('Git nullstilt');
+                loadGitCommits();
+                updateStagedPreview();
+            };
+        }
+
+        // --- Database Inspector ---
+        function inspectDatabaseTable() {
+            const tableName = document.getElementById('db-table-select').value;
+            const view = document.getElementById('db-table-view');
+            if (tableName === 'users') {
+                view.innerHTML = `<table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-[#42BA96]"><th class="p-2">id</th><th class="p-2">username</th><th class="p-2">email</th></tr></thead><tbody><tr class="border-b border-slate-800"><td class="p-2">1</td><td class="p-2">karbana_admin</td><td class="p-2">admin@karbana.dev</td></tr><tr class="border-b border-slate-800"><td class="p-2">2</td><td class="p-2">developer</td><td class="p-2">dev@karbana.dev</td></tr></tbody></table>`;
+            } else {
+                view.innerHTML = `<pre class="text-emerald-300">{\n  "theme": "dark-mint",\n  "autosave": true,\n  "workspace": "karbana-core"\n}</pre>`;
+            }
+        }
+
+        function seedDatabaseTable() {
+            showToast('Tabell tilbakestilt!');
+            inspectDatabaseTable();
+            logTerminal('Database tabell tilbakestilt til standardverdier.');
+        }
+
+        // --- Terminal Execution ---
+        function handleTerminalKey(event) {
+            if (event.key === 'Enter') {
+                executeTerminalCommand();
+            }
+        }
+
+        function executeTerminalCommand() {
+            const input = document.getElementById('terminal-input');
+            const cmd = input.value.trim();
+            if (!cmd) return;
+
+            logTerminal(`karbana@studio:~$ ${cmd}`);
+            input.value = '';
+
+            const parts = cmd.split(' ');
+            const mainCmd = parts[0];
+
+            if (mainCmd === 'clear') {
+                document.getElementById('terminal-screen').innerHTML = '';
+            } else if (mainCmd === 'help') {
+                logTerminal('Tilgjengelige kommandoer:');
+                logTerminal('  ls          - Vis filer i IndexedDB workspace');
+                logTerminal('  cat <fil>   - Vis innhold i fil');
+                logTerminal('  git status  - Vis git status');
+                logTerminal('  npm test    - Kjør testing');
+                logTerminal('  run build   - Simuler build');
+                logTerminal('  clear       - Tøm terminal');
+            } else if (mainCmd === 'ls') {
+                if (!db) { logTerminal('DB ikke klar'); return; }
+                db.transaction(['files'], 'readonly').objectStore('files').getAll().onsuccess = (e) => {
+                    e.target.result.forEach(f => logTerminal(`  ${f.name}`));
+                };
+            } else if (mainCmd === 'cat') {
+                const fname = parts[1];
+                if (!fname) { logTerminal('Angi filnavn, f.eks. cat README.md'); return; }
+                db.transaction(['files'], 'readonly').objectStore('files').get(fname).onsuccess = (e) => {
+                    const f = e.target.result;
+                    if (f) logTerminal(f.content);
+                    else logTerminal(`Fant ikke filen: ${fname}`);
+                };
+            } else if (mainCmd === 'git') {
+                if (parts[1] === 'status') {
+                    logantalStaged = db ? 'Ok' : 'Inaktiv';
+                    logTerminal(`On branch ${currentBranch}`);
+                    logTerminal('Working tree clean (IndexedDB synchronized)');
+                } else {
+                    logTerminal(`Git kommando '${parts[1]}' simulert vellykket.`);
+                }
+            } else if (mainCmd === 'npm' || mainCmd === 'run') {
+                logTerminal(`Utfører ${cmd}...`);
+                setTimeout(() => {
+                    logTerminal('Bygg fullført uten feil i IndexedDB lokt miljø.');
+                }, 800);
+            } else {
+                logTerminal(`Kommando ikke funnet: ${mainCmd}. Skriv 'help' for oversikt.`);
+            }
+        }
+
+        window.onload = function() {
+            initIndexedDB().catch(err => console.error('DB Init Feil', err));
+        };
+    </script>
+</body>
+</html>
