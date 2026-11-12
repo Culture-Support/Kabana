@@ -2,8 +2,8 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kabana Studio & Runtime Editor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kabana Studio </title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,909 +12,1129 @@
             theme: {
                 extend: {
                     colors: {
-                        dark: {
-                            900: '#0f172a',
-                            800: '#1e293b',
-                            700: '#334155',
-                            600: '#475569',
-                            500: '#64748b'
+                        mint: {
+                            50: '#f0fdf9',
+                            100: '#ccfbf1',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            DEFAULT: '#42BA96',
+                            accent: '#70C1B3'
+                        },
+                        glass: {
+                            dark: 'rgba(15, 23, 42, 0.75)',
+                            light: 'rgba(255, 255, 255, 0.75)',
+                            border: 'rgba(255, 255, 255, 0.12)'
                         }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['Fira Code', 'JetBrains Mono', 'Menlo', 'monospace']
                     }
                 }
             }
         }
     </script>
-    <!-- FontAwesome for Icons -->
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Leaflet CSS for Maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #090d16 0%, #111c2e 50%, #0d1b2a 100%);
+            color: #e2e8f0;
+            min-height: 100dvh;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-sidebar {
+            background: rgba(11, 18, 32, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.2s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(66, 186, 150, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        /* Custom scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-        .node-card { cursor: grab; user-select: none; position: absolute; }
-        .node-card:active { cursor: grabbing; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(66, 186, 150, 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(66, 186, 150, 0.6); }
+
+        .mint-glow {
+            box-shadow: 0 0 20px rgba(66, 186, 150, 0.25);
+        }
+        .tab-active {
+            background: linear-gradient(135deg, rgba(66, 186, 150, 0.2) 0%, rgba(14, 116, 144, 0.2) 100%);
+            border-color: #42BA96;
+            color: #70C1B3;
+        }
     </style>
 </head>
-<body class="bg-dark-900 text-slate-100 h-screen flex flex-col overflow-hidden">
+<body class="min-h-[100dvh] flex flex-col text-slate-100 selection:bg-mint/30 selection:text-mint-100">
 
-    <!-- Top Navigation Header -->
-    <header class="h-14 bg-dark-800 border-b border-dark-700 flex items-center justify-between px-4 shrink-0 select-none">
+    <!-- Top Window Titlebar (macOS / Linux Mint Cinnamon Hybrid Style) -->
+    <header class="h-12 glass-panel border-b border-white/10 flex items-center justify-between px-4 sticky top-0 z-50 select-none">
         <div class="flex items-center space-x-3">
-            <div class="bg-gradient-to-tr from-orange-600 to-amber-500 text-white w-9 h-9 rounded-lg flex items-center font-bold text-lg shadow-lg">
-                <i class="fa-solid fa-bolt text-sm"></i>
+            <!-- Window Control Dots -->
+            <div class="flex items-center space-x-2">
+                <button onclick="showToast('Window minimized', 'info')" class="w-3 h-3 rounded-full bg-rose-500 hover:bg-rose-600 transition-colors focus:outline-none" title="Minimize"></button>
+                <button onclick="toggleMaximize()" class="w-3 h-3 rounded-full bg-amber-500 hover:bg-amber-600 transition-colors focus:outline-none" title="Maximize"></button>
+                <button onclick="showToast('Kabana Studio v4.5 active', 'success')" class="w-3 h-3 rounded-full bg-emerald-500 hover:bg-emerald-600 transition-colors focus:outline-none" title="Restore"></button>
             </div>
-            <div>
-                <h1 class="font-bold text-base leading-tight tracking-wide flex items-center gap-2">
-                    Kabana Studio <span class="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full font-mono">v3.0-Cloud & Map</span>
-                </h1>
-                <p class="text-xs text-slate-400">Project: <span id="current-project-name" class="text-slate-200 font-medium">Global IoT & API Pipeline</span></p>
+            <div class="h-4 w-[1px] bg-white/10 mx-1"></div>
+            <!-- App Branding -->
+            <div class="flex items-center space-x-2">
+                <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-mint to-teal-600 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-mint/20">
+                    <i class="fa-solid fa-cube text-xs"></i>
+                </div>
+                <span class="font-bold text-sm tracking-wide bg-gradient-to-r from-white via-slate-200 to-mint-400 bg-clip-text text-transparent">Kabana Studio</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-mint/10 text-mint border border-mint/20 hidden sm:inline-block font-mono">v4.5-robot</span>
             </div>
         </div>
 
+        <!-- Global Status / Quick Actions -->
         <div class="flex items-center space-x-3">
-            <button onclick="openGitModal()" class="flex items-center space-x-2 bg-dark-700 hover:bg-dark-600 text-slate-200 text-sm px-3 py-1.5 rounded-lg border border-dark-600 transition shadow-sm">
-                <i class="fa-brands fa-git-alt text-orange-400"></i>
-                <span>Git Integration</span>
-                <span class="bg-orange-500 text-xs text-white px-1.5 rounded-full ml-1">5</span>
-            </button>
-            <button onclick="saveProjectToDB()" class="flex items-center space-x-2 bg-dark-700 hover:bg-dark-600 text-slate-200 text-sm px-3 py-1.5 rounded-lg border border-dark-600 transition shadow-sm">
-                <i class="fa-solid fa-database text-emerald-400"></i>
-                <span>IndexedDB Sync</span>
-            </button>
-            <button onclick="runAdvancedSandboxPipeline()" class="flex items-center space-x-2 bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition shadow-md">
+            <div class="hidden md:flex items-center space-x-2 text-xs text-slate-400 bg-slate-900/60 px-3 py-1 rounded-full border border-white/5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Runtime: <strong class="text-slate-200">Node v20.11 LTS</strong></span>
+                <span class="text-slate-600">|</span>
+                <span>Branch: <strong class="text-mint font-mono">main</strong></span>
+            </div>
+            <button onclick="triggerGlobalBuild()" class="px-3 py-1.5 rounded-lg bg-mint hover:bg-mint-600 text-slate-950 text-xs font-semibold flex items-center space-x-2 transition-all shadow-md shadow-mint/20 active:scale-95 cursor-pointer">
                 <i class="fa-solid fa-play"></i>
-                <span>Run Sandbox Pipeline</span>
+                <span class="hidden sm:inline">Build & Run</span>
+            </button>
+            <button onclick="openSettingsModal()" class="w-8 h-8 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors border border-white/5">
+                <i class="fa-solid fa-gear text-xs"></i>
             </button>
         </div>
     </header>
 
     <!-- Main Workspace Layout -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
 
-        <!-- Left Sidebar: Project Navigator -->
-        <aside class="w-64 bg-dark-800/90 border-r border-dark-700 flex flex-col shrink-0 select-none">
-            <div class="p-3 border-b border-dark-700 flex items-center justify-between">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Project Navigator</span>
-                <button onclick="createNewFile()" class="text-slate-400 hover:text-white text-sm px-1.5 py-0.5 rounded hover:bg-dark-700 transition" title="New File">
-                    <i class="fa-solid fa-plus"></i>
-                </button>
-            </div>
-            <div class="p-2 border-b border-dark-700">
-                <div class="relative">
-                    <i class="fa-solid fa-search absolute left-2.5 top-2.5 text-xs text-slate-500"></i>
-                    <input type="text" id="nav-search" oninput="filterNavigator()" placeholder="Search workspace..." class="w-full bg-dark-900 border border-dark-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
+        <!-- Sidebar Navigation -->
+        <aside class="glass-sidebar w-full md:w-64 flex md:flex-col justify-between p-2 md:p-4 z-20 shrink-0">
+            <div class="flex md:flex-col w-full justify-around md:justify-start md:space-y-6">
+                <!-- Workspace Selector Header -->
+                <div class="hidden md:block pb-4 border-b border-white/10">
+                    <p class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Active Repository</p>
+                    <div class="flex items-center justify-between bg-slate-900/80 p-2.5 rounded-xl border border-white/5">
+                        <div class="flex items-center space-x-2 overflow-hidden">
+                            <i class="fa-brands fa-git-alt text-mint"></i>
+                            <span class="text-xs font-medium truncate text-slate-200" id="repo-name-display">kabana-enterprise-core</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                    </div>
                 </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="flex md:flex-col space-x-1 md:space-x-0 md:space-y-1.5 w-full">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex-1 md:flex-none flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all tab-active group">
+                        <i class="fa-solid fa-chart-pie w-5 text-center text-mint group-hover:scale-110 transition-transform"></i>
+                        <span class="hidden md:inline">Dashboard</span>
+                    </button>
+                    <button onclick="switchTab('explorer')" id="nav-explorer" class="flex-1 md:flex-none flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-white/5 group">
+                        <i class="fa-solid fa-code w-5 text-center group-hover:scale-110 transition-transform"></i>
+                        <span class="hidden md:inline">File Explorer & Editor</span>
+                    </button>
+                    <button onclick="switchTab('git')" id="nav-git" class="flex-1 md:flex-none flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-white/5 group">
+                        <i class="fa-solid fa-code-commit w-5 text-center group-hover:scale-110 transition-transform"></i>
+                        <span class="hidden md:inline">Git Commits & Builds</span>
+                    </button>
+                    <button onclick="switchTab('schema')" id="nav-schema" class="flex-1 md:flex-none flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-white/5 group">
+                        <i class="fa-solid fa-database w-5 text-center group-hover:scale-110 transition-transform"></i>
+                        <span class="hidden md:inline">Raw JSON Schema</span>
+                    </button>
+                </nav>
             </div>
-            <div id="file-tree-container" class="flex-1 overflow-y-auto p-2 space-y-1 text-sm">
-                <!-- Populated dynamically -->
-            </div>
-            <div class="p-3 border-t border-dark-700 bg-dark-900/40 text-xs text-slate-400 flex items-center justify-between">
-                <span id="db-status"><i class="fa-solid fa-circle text-emerald-500 text-[10px] mr-1"></i> Cloud DB Active</span>
-                <span id="item-count">0 items</span>
+
+            <!-- Sidebar Footer Status -->
+            <div class="hidden md:block pt-4 border-t border-white/10">
+                <div class="glass-card p-3 rounded-xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-medium text-slate-300">Memory Usage</span>
+                        <span class="text-[10px] text-mint font-mono" id="memory-stat">442MB / 2GB</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-mint to-teal-500 h-full w-[22%] rounded-full"></div>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>Cluster: <strong class="text-slate-300">us-east-1</strong></span>
+                        <span class="text-emerald-400"><i class="fa-solid fa-circle text-[8px] mr-1"></i>Healthy</span>
+                    </div>
+                </div>
             </div>
         </aside>
 
-        <!-- Center Workspace: Tabs & Editors -->
-        <main class="flex-1 flex flex-col bg-dark-900 overflow-hidden">
-            <!-- Tabs Bar -->
-            <div class="h-10 bg-dark-800 border-b border-dark-700 flex items-center px-2 space-x-1 shrink-0 overflow-x-auto">
-                <button onclick="switchTab('workflow')" id="tab-workflow" class="tab-btn px-4 py-2 text-xs font-medium flex items-center space-x-2 bg-dark-900 text-orange-400 border-t-2 border-orange-500 rounded-t-lg transition">
-                    <i class="fa-solid fa-diagram-project"></i>
-                    <span>Advanced Workflow Canvas</span>
-                </button>
-                <button onclick="switchTab('api')" id="tab-api" class="tab-btn px-4 py-2 text-xs font-medium flex items-center space-x-2 bg-dark-800 text-slate-400 hover:text-slate-200 hover:bg-dark-700/50 rounded-t-lg transition">
-                    <i class="fa-solid fa-network-wired"></i>
-                    <span>API Build Editor</span>
-                </button>
-                <button onclick="switchTab('storage')" id="tab-storage" class="tab-btn px-4 py-2 text-xs font-medium flex items-center space-x-2 bg-dark-800 text-slate-400 hover:text-slate-200 hover:bg-dark-700/50 rounded-t-lg transition">
-                    <i class="fa-solid fa-cloud"></i>
-                    <span>Cloud Storage & IndexedDB</span>
-                </button>
-                <button onclick="switchTab('maps')" id="tab-maps" class="tab-btn px-4 py-2 text-xs font-medium flex items-center space-x-2 bg-dark-800 text-slate-400 hover:text-slate-200 hover:bg-dark-700/50 rounded-t-lg transition">
-                    <i class="fa-solid fa-map-location-dot"></i>
-                    <span>GIS Map Analytics</span>
-                </button>
-                <button onclick="switchTab('sandbox')" id="tab-sandbox" class="tab-btn px-4 py-2 text-xs font-medium flex items-center space-x-2 bg-dark-800 text-slate-400 hover:text-slate-200 hover:bg-dark-700/50 rounded-t-lg transition">
-                    <i class="fa-solid fa-box-archive"></i>
-                    <span>Sandbox Units</span>
-                </button>
-            </div>
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/40 relative">
 
-            <!-- Tab Content 1: Advanced Workflow Canvas -->
-            <div id="view-workflow" class="workspace-view flex-1 relative bg-dark-900 overflow-hidden flex flex-col">
-                <div class="absolute top-4 left-4 z-10 bg-dark-800/90 backdrop-blur border border-dark-700 p-2.5 rounded-xl flex items-center gap-3 shadow-2xl">
-                    <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-plus text-orange-500 mr-1"></i> Add Node:</span>
-                    <button onclick="addWorkflowNode('API Source', 'json')" class="text-xs bg-dark-700 hover:bg-dark-600 px-3 py-1.5 rounded-lg text-slate-200 transition font-medium"><i class="fa-solid fa-globe mr-1 text-blue-400"></i> API Source (JSON)</button>
-                    <button onclick="addWorkflowNode('C++ Engine', 'cpp')" class="text-xs bg-dark-700 hover:bg-dark-600 px-3 py-1.5 rounded-lg text-slate-200 transition font-medium"><i class="fa-solid fa-microchip mr-1 text-purple-400"></i> C++ Runtime</button>
-                    <button onclick="addWorkflowNode('Kotlin Worker', 'kotlin')" class="text-xs bg-dark-700 hover:bg-dark-600 px-3 py-1.5 rounded-lg text-slate-200 transition font-medium"><i class="fa-solid fa-code mr-1 text-amber-400"></i> Kotlin Worker</button>
-                    <button onclick="addWorkflowNode('GIS Map Marker', 'json')" class="text-xs bg-dark-700 hover:bg-dark-600 px-3 py-1.5 rounded-lg text-slate-200 transition font-medium"><i class="fa-solid fa-location-dot mr-1 text-red-400"></i> Map Node</button>
+            <!-- 1. DASHBOARD VIEW -->
+            <section id="view-dashboard" class="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto space-y-6">
+                <!-- Welcome Banner -->
+                <div class="glass-card p-6 rounded-2xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-mint/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="space-y-1 z-10">
+                        <div class="flex items-center space-x-2 text-xs text-mint font-medium">
+                            <i class="fa-solid fa-robot"></i>
+                            <span>Autonomous Robotic CI/CD Fleet Active</span>
+                        </div>
+                        <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Kabana Studio Dashboard</h1>
+                        <p class="text-xs md:text-sm text-slate-400 max-w-xl">Automated build bots and robotic CI daemons are continuously compiling repositories and monitoring runtime containers.</p>
+                    </div>
+                    <div class="flex items-center space-x-3 z-10">
+                        <button onclick="triggerGlobalBuild()" class="px-4 py-2.5 rounded-xl bg-mint hover:bg-mint-600 text-slate-950 text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-mint/20 transition-all cursor-pointer">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Trigger Robot Build</span>
+                        </button>
+                        <button onclick="switchTab('explorer')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center space-x-2 border border-white/10 transition-all">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>Open Files</span>
+                        </button>
+                    </div>
                 </div>
-                
-                <div id="workflow-canvas-container" class="flex-1 relative overflow-auto bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px]" style="min-height: 800px;" ondragover="allowDrop(event)" ondrop="dropWorkflowNode(event)">
-                    <!-- Interactive Draggable Workflow Nodes Layer -->
-                    <div id="workflow-nodes-layer" class="absolute inset-0 pointer-events-none">
-                        <!-- Default Node 1 -->
-                        <div id="node-1" class="node-card pointer-events-auto bg-dark-800 border border-orange-500/60 rounded-xl p-4 shadow-2xl w-72" style="top: 80px; left: 100px;" onmousedown="startDragNode(event, 'node-1')">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-orange-400 flex items-center"><i class="fa-solid fa-globe mr-1.5"></i> API Source #1</span>
-                                <div class="flex items-center gap-1.5">
-                                    <button onclick="openNodeEditModal('node-1', 'API Source', 'https://api.kabana.io/v1/telemetry', 'json')" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-gear"></i></button>
-                                    <button onclick="deleteWorkflowNode('node-1')" class="text-slate-400 hover:text-red-400 text-xs"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            </div>
-                            <p class="text-xs text-slate-400 mb-1 truncate">URL: <code class="text-slate-200 bg-dark-900 px-1 py-0.5 rounded">https://api.kabana.io/v1/telemetry</code></p>
-                            <p class="text-xs text-slate-400 mb-3">Language/Runtime: <span class="text-blue-400 font-mono font-bold">JSON / REST</span></p>
-                            <div class="text-[10px] text-slate-500 border-t border-dark-700 pt-2 flex justify-between items-center">
-                                <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Connected</span>
-                                <button onclick="testNodeExecution('node-1')" class="bg-orange-600/20 hover:bg-orange-600 text-orange-300 hover:text-white px-2 py-0.5 rounded transition text-[10px]">Test Node</button>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-medium">Robot Commits</span>
+                            <div class="w-8 h-8 rounded-lg bg-mint/10 text-mint flex items-center justify-center">
+                                <i class="fa-solid fa-code-commit text-sm"></i>
                             </div>
                         </div>
+                        <div>
+                            <div class="text-xl md:text-2xl font-bold text-white" id="metric-commits">312</div>
+                            <span class="text-[10px] text-emerald-400 flex items-center mt-1"><i class="fa-solid fa-arrow-trend-up mr-1"></i>+24 automated</span>
+                        </div>
+                    </div>
 
-                        <!-- Default Node 2: C++ Runtime -->
-                        <div id="node-2" class="node-card pointer-events-auto bg-dark-800 border border-purple-500/60 rounded-xl p-4 shadow-2xl w-72" style="top: 80px; left: 420px;" onmousedown="startDragNode(event, 'node-2')">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-purple-400 flex items-center"><i class="fa-solid fa-microchip mr-1.5"></i> C++ Core Engine</span>
-                                <div class="flex items-center gap-1.5">
-                                    <button onclick="openNodeEditModal('node-2', 'C++ Engine', '#include <iostream>\\nint main() { return 0; }', 'cpp')" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-gear"></i></button>
-                                    <button onclick="deleteWorkflowNode('node-2')" class="text-slate-400 hover:text-red-400 text-xs"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            </div>
-                            <p class="text-xs text-slate-400 mb-1 truncate">Runtime: <code class="text-slate-200 bg-dark-900 px-1 py-0.5 rounded">Native C++17 Worker</code></p>
-                            <p class="text-xs text-slate-400 mb-3">Language: <span class="text-purple-400 font-mono font-bold">C++</span></p>
-                            <div class="text-[10px] text-slate-500 border-t border-dark-700 pt-2 flex justify-between items-center">
-                                <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Compiled</span>
-                                <button onclick="testNodeExecution('node-2')" class="bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white px-2 py-0.5 rounded transition text-[10px]">Run C++</button>
+                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-medium">Bot Success Rate</span>
+                            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                                <i class="fa-solid fa-check-circle text-sm"></i>
                             </div>
                         </div>
+                        <div>
+                            <div class="text-xl md:text-2xl font-bold text-white" id="metric-success">99.2%</div>
+                            <span class="text-[10px] text-emerald-400 flex items-center mt-1"><i class="fa-solid fa-bolt mr-1"></i>Avg bot build 38s</span>
+                        </div>
+                    </div>
 
-                        <!-- Default Node 3: Kotlin Worker -->
-                        <div id="node-3" class="node-card pointer-events-auto bg-dark-800 border border-amber-500/60 rounded-xl p-4 shadow-2xl w-72" style="top: 80px; left: 740px;" onmousedown="startDragNode(event, 'node-3')">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-amber-400 flex items-center"><i class="fa-solid fa-code mr-1.5"></i> Kotlin Stream Worker</span>
-                                <div class="flex items-center gap-1.5">
-                                    <button onclick="openNodeEditModal('node-3', 'Kotlin Worker', 'fun main() { println(\"Kabana Kotlin Worker\") }', 'kotlin')" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-gear"></i></button>
-                                    <button onclick="deleteWorkflowNode('node-3')" class="text-slate-400 hover:text-red-400 text-xs"><i class="fa-solid fa-trash"></i></button>
-                                </div>
+                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-medium">Active Services</span>
+                            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                                <i class="fa-solid fa-server text-sm"></i>
                             </div>
-                            <p class="text-xs text-slate-400 mb-1 truncate">Runtime: <code class="text-slate-200 bg-dark-900 px-1 py-0.5 rounded">JVM / Kotlin Coroutine</code></p>
-                            <p class="text-xs text-slate-400 mb-3">Language: <span class="text-amber-400 font-mono font-bold">Kotlin</span></p>
-                            <div class="text-[10px] text-slate-500 border-t border-dark-700 pt-2 flex justify-between items-center">
-                                <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Active</span>
-                                <button onclick="testNodeExecution('node-3')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white px-2 py-0.5 rounded transition text-[10px]">Run Kotlin</button>
+                        </div>
+                        <div>
+                            <div class="text-xl md:text-2xl font-bold text-white" id="metric-services">6 / 6</div>
+                            <span class="text-[10px] text-cyan-400 flex items-center mt-1"><i class="fa-solid fa-signal mr-1"></i>All operational</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-medium">Runtime Environment</span>
+                            <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                                <i class="fa-solid fa-microchip text-sm"></i>
                             </div>
+                        </div>
+                        <div>
+                            <div class="text-xl md:text-2xl font-bold text-white">Docker/k8s</div>
+                            <span class="text-[10px] text-purple-400 flex items-center mt-1"><i class="fa-solid fa-shield mr-1"></i>Robot Sandbox</span>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Tab Content 2: API Build Editor -->
-            <div id="view-api" class="workspace-view flex-1 hidden flex-col bg-dark-900 p-6 overflow-y-auto">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-network-wired text-orange-500"></i> API Build & Endpoint Manager</h2>
-                        <p class="text-xs text-slate-400">Design, mock, and test micro-APIs inside Kabana Studio.</p>
-                    </div>
-                    <button onclick="createNewApiEndpoint()" class="bg-orange-600 hover:bg-orange-500 text-white text-xs px-4 py-2 rounded-lg transition font-medium"><i class="fa-solid fa-plus mr-1.5"></i> Create New Endpoint</button>
-                </div>
-
+                <!-- Recent Builds & Services Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-dark-800 border border-dark-700 rounded-xl p-4 space-y-3">
-                        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Endpoints</h3>
-                        <div id="endpoints-list" class="space-y-2">
-                            <div onclick="selectEndpoint('GET /api/v1/telemetry')" class="bg-dark-900 border border-orange-500/80 p-3 rounded-lg cursor-pointer transition">
-                                <div class="flex items-center justify-between mb-1"><span class="font-mono text-xs font-bold text-emerald-400">GET</span><span class="text-[10px] text-slate-400">Active</span></div>
-                                <p class="text-xs text-slate-200 font-mono">/api/v1/telemetry</p>
+                    <!-- Recent Builds List -->
+                    <div class="lg:col-span-2 glass-card p-5 rounded-2xl flex flex-col space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-hammer text-mint"></i>
+                                <h2 class="text-sm font-semibold text-white">Recent Robotic Pipeline Status</h2>
                             </div>
-                            <div onclick="selectEndpoint('POST /api/v1/orders')" class="bg-dark-900/60 border border-dark-700 p-3 rounded-lg cursor-pointer hover:border-dark-600 transition">
-                                <div class="flex items-center justify-between mb-1"><span class="font-mono text-xs font-bold text-amber-400">POST</span><span class="text-[10px] text-slate-400">Draft</span></div>
-                                <p class="text-xs text-slate-200 font-mono">/api/v1/orders</p>
-                            </div>
+                            <button onclick="switchTab('git')" class="text-xs text-mint hover:underline flex items-center space-x-1">
+                                <span>View all builds</span>
+                                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
                         </div>
-                    </div>
-
-                    <div class="lg:col-span-2 bg-dark-800 border border-dark-700 rounded-xl p-5 flex flex-col space-y-4">
-                        <div class="flex justify-between items-center">
-                            <span id="selected-endpoint-title" class="text-xs font-bold text-orange-400 font-mono">GET /api/v1/telemetry</span>
-                            <button onclick="deployEndpoint()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-lg transition">Deploy Endpoint</button>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">Endpoint URL / Route</label>
-                            <input type="text" id="api-route-input" value="https://api.kabana.io/v1/telemetry" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-orange-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">Mock JSON Response Body</label>
-                            <textarea id="api-response-body" rows="6" class="w-full bg-dark-900 border border-dark-700 rounded-lg p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-orange-500 leading-relaxed">{
-  "status": "success",
-  "region": "Nordics-Europe",
-  "coordinates": { "lat": 62.9167, "lng": 7.8333 },
-  "sensors": [
-    { "id": "sens_01", "temp": 18.4, "status": "nominal" },
-    { "id": "sens_02", "temp": 21.2, "status": "nominal" }
-  ]
-}</textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab Content 3: Cloud Storage & IndexedDB -->
-            <div id="view-storage" class="workspace-view flex-1 hidden flex-col bg-dark-900 p-6 overflow-y-auto">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-cloud text-orange-500"></i> Cloud Storage & IndexedDB Synchronization</h2>
-                        <p class="text-xs text-slate-400">Manage cloud buckets, local IndexedDB persistence, and backup states.</p>
-                    </div>
-                    <div class="flex gap-3">
-                        <button onclick="seedDatabaseRecords()" class="bg-dark-800 hover:bg-dark-700 text-slate-200 text-xs px-3 py-2 rounded-lg border border-dark-700 transition"><i class="fa-solid fa-seedling mr-1.5 text-emerald-400"></i> Seed Storage Data</button>
-                        <button onclick="loadDatabaseRecords()" class="bg-orange-600 hover:bg-orange-500 text-white text-xs px-3 py-2 rounded-lg transition"><i class="fa-solid fa-rotate mr-1.5"></i> Refresh Storage</button>
-                    </div>
-                </div>
-
-                <div class="bg-dark-800 border border-dark-700 rounded-xl overflow-hidden shadow-xl">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-dark-700/50 text-slate-400 uppercase font-semibold border-b border-dark-700">
-                            <tr>
-                                <th class="p-3">Record ID</th>
-                                <th class="p-3">Storage Object / Item</th>
-                                <th class="p-3">Value / Amount</th>
-                                <th class="p-3">Sync Status</th>
-                                <th class="p-3">Timestamp</th>
-                                <th class="p-3 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="db-records-table" class="divide-y divide-dark-700 text-slate-300">
+                        <div class="space-y-3" id="dashboard-builds-list">
                             <!-- Populated dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Tab Content 4: GIS Map Analytics -->
-            <div id="view-maps" class="workspace-view flex-1 hidden flex-col bg-dark-900 relative">
-                <div class="absolute top-4 left-4 z-[400] bg-dark-800/90 backdrop-blur border border-dark-700 p-3 rounded-xl shadow-2xl max-w-sm">
-                    <h3 class="text-xs font-bold text-slate-100 flex items-center gap-2 mb-1"><i class="fa-solid fa-map-location-dot text-red-400"></i> GIS Spatial Telemetry</h3>
-                    <p class="text-[11px] text-slate-400 mb-2">Connected live to workflow pipeline sensor nodes.</p>
-                    <div class="space-y-1 font-mono text-[10px] text-slate-300">
-                        <div class="flex justify-between bg-dark-900 p-1.5 rounded"><span>Node #01 (Gjemnes Hub)</span><span class="text-emerald-400">Active</span></div>
-                        <div class="flex justify-between bg-dark-900 p-1.5 rounded"><span>Node #02 (Oslo Gateway)</span><span class="text-emerald-400">Active</span></div>
-                    </div>
-                </div>
-                <div id="leaflet-map" class="w-full flex-1"></div>
-            </div>
-
-            <!-- Tab Content 5: Sandbox Units -->
-            <div id="view-sandbox" class="workspace-view flex-1 hidden flex-col bg-dark-900">
-                <div class="grid grid-cols-1 lg:grid-cols-2 flex-1 overflow-hidden">
-                    <div class="flex flex-col border-r border-dark-700">
-                        <div class="bg-dark-800 px-4 py-2 text-xs font-semibold text-slate-400 border-b border-dark-700 flex justify-between items-center">
-                            <span>Sandbox Unit Execution Engine (JavaScript)</span>
-                            <span class="text-emerald-400 font-mono text-[10px]">sandbox.unit.v3()</span>
                         </div>
-                        <textarea id="runtime-code-input" class="flex-1 bg-dark-900 p-4 font-mono text-xs text-slate-200 resize-none focus:outline-none leading-relaxed">// Kabana Sandbox Execution Unit
-async function runSandboxUnit() {
-    console.log("Initializing Secure Sandbox Unit...");
-    
-    // Fetch simulated telemetry payload
-    const telemetryPacket = {
-        unitId: "kabana-sandbox-node-09",
-        region: "Nordics",
-        coordinates: { lat: 62.9167, lng: 7.8333 },
-        status: "Operational",
-        metrics: { cpuLoad: "24%", memoryUsage: "512MB" }
-    };
-    
-    console.log("Processed Sandbox telemetry successfully:", telemetryPacket);
-    return { success: true, timestamp: new Date().toISOString(), packet: telemetryPacket };
-}
-
-runSandboxUnit();</textarea>
                     </div>
-                    <div class="flex flex-col bg-dark-950">
-                        <div class="bg-dark-800 px-4 py-2 text-xs font-semibold text-slate-400 border-b border-dark-700 flex justify-between items-center">
-                            <span>Sandbox Output Console</span>
-                            <button onclick="clearConsole()" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-trash"></i> Clear</button>
+
+                    <!-- Services Widget -->
+                    <div class="glass-card p-5 rounded-2xl flex flex-col space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-network-wired text-mint"></i>
+                                <h2 class="text-sm font-semibold text-white">Active Services</h2>
+                            </div>
+                            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">Live</span>
                         </div>
-                        <div id="runtime-console-output" class="flex-1 p-4 font-mono text-xs text-emerald-400 overflow-y-auto space-y-1">
-                            <p class="text-slate-500">// Sandbox console ready. Click 'Run Sandbox Pipeline' to execute.</p>
+                        <div class="space-y-3" id="dashboard-services-list">
+                            <!-- Populated dynamically -->
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <!-- 2. FILE EXPLORER & EDITOR VIEW -->
+            <section id="view-explorer" class="flex-1 hidden flex-col md:flex-row overflow-hidden">
+                <!-- File Tree Sidebar -->
+                <div class="w-full md:w-72 glass-sidebar flex flex-col border-r border-white/10 shrink-0">
+                    <div class="p-3 border-b border-white/10 flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Repository Files</span>
+                        <div class="flex items-center space-x-1">
+                            <button onclick="showToast('New file dialog opened', 'info')" class="w-7 h-7 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center transition-colors" title="New File">
+                                <i class="fa-solid fa-file-circle-plus text-xs"></i>
+                            </button>
+                            <button onclick="refreshFileExplorer()" class="w-7 h-7 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center transition-colors" title="Refresh">
+                                <i class="fa-solid fa-rotate text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Search Filter -->
+                    <div class="p-2 border-b border-white/5">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-xs text-slate-500"></i>
+                            <input type="text" id="file-search-input" onkeyup="filterFileTree()" placeholder="Search files..." class="w-full bg-slate-900/80 text-xs text-slate-200 pl-8 pr-3 py-1.5 rounded-lg border border-white/5 focus:outline-none focus:border-mint/50">
+                        </div>
+                    </div>
+                    <!-- File Tree List -->
+                    <div class="flex-1 overflow-y-auto p-2 space-y-1 font-mono text-xs" id="file-tree-container">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Code Editor & Live Preview Area -->
+                <div class="flex-1 flex flex-col overflow-hidden bg-slate-950">
+                    <!-- Editor Top Bar / Tabs -->
+                    <div class="h-10 bg-slate-900/90 border-b border-white/10 flex items-center justify-between px-3 shrink-0">
+                        <div class="flex items-center space-x-2 overflow-x-auto" id="editor-tabs">
+                            <!-- Active Tabs -->
+                        </div>
+                        <div class="flex items-center space-x-2 shrink-0">
+                            <button onclick="runCodePreview()" class="px-3 py-1 rounded bg-mint/20 hover:bg-mint/30 text-mint text-xs font-medium flex items-center space-x-1.5 transition-colors border border-mint/30 cursor-pointer">
+                                <i class="fa-solid fa-play text-[10px]"></i>
+                                <span>Preview</span>
+                            </button>
+                            <button onclick="saveCurrentFile()" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center space-x-1.5 transition-colors border border-white/10">
+                                <i class="fa-solid fa-floppy-disk text-[10px]"></i>
+                                <span>Save</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Split Editor / Preview Panel -->
+                    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+                        <!-- Code Editor Area -->
+                        <div class="flex-1 flex flex-col overflow-hidden border-r border-white/10 relative">
+                            <div class="bg-slate-900/50 px-4 py-1 text-[11px] text-slate-400 font-mono border-b border-white/5 flex items-center justify-between">
+                                <span id="current-filepath">src/index.js</span>
+                                <span id="current-lang-badge" class="text-mint">JavaScript</span>
+                            </div>
+                            <div class="flex-1 flex overflow-hidden font-mono text-xs">
+                                <!-- Line Numbers -->
+                                <div class="w-12 bg-slate-950/60 text-slate-600 select-none py-3 text-right pr-3 space-y-1 overflow-hidden" id="editor-line-numbers">
+                                    1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10
+                                </div>
+                                <!-- Editable Textarea / Code Area -->
+                                <textarea id="code-editor-textarea" oninput="updateLineNumbers()" spellcheck="false" class="flex-1 bg-transparent text-slate-200 p-3 resize-none focus:outline-none font-mono text-xs leading-relaxed overflow-y-auto whitespace-pre"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Live Code Preview Box -->
+                        <div class="w-full lg:w-1/2 flex flex-col bg-slate-900/40 overflow-hidden border-t lg:border-t-0 border-white/10">
+                            <div class="bg-slate-900/80 px-4 py-2 border-b border-white/10 flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fa-solid fa-globe text-mint text-xs"></i>
+                                    <span class="text-xs font-medium text-slate-300">Live Preview Container</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="refreshPreviewFrame()" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-white/5"><i class="fa-solid fa-rotate-right mr-1"></i>Reload</button>
+                                </div>
+                            </div>
+                            <div class="flex-1 bg-slate-950 p-2 flex flex-col items-center justify-center relative overflow-hidden" id="preview-container-wrapper">
+                                <iframe id="live-preview-frame" class="w-full h-full rounded-lg bg-white border border-white/10"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. GIT COMMITS & BUILDS VIEW -->
+            <section id="view-git" class="flex-1 hidden flex-col p-4 md:p-6 overflow-y-auto space-y-6">
+                <!-- Git Header & Actions -->
+                <div class="glass-card p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2 text-xs text-mint font-medium">
+                            <i class="fa-solid fa-robot"></i>
+                            <span>Autonomous Robotic Version Control & CI/CD</span>
+                        </div>
+                        <h2 class="text-lg font-bold text-white">Robotic Commit History & Automated Builds</h2>
+                        <p class="text-xs text-slate-400">Inspect automated robot signatures, CI runner logs, and test execution results.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="triggerGlobalBuild()" class="px-4 py-2 rounded-xl bg-mint hover:bg-mint-600 text-slate-950 text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-mint/20 cursor-pointer">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Run Robot Pipeline</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Commits & Builds Two Column Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Commit History -->
+                    <div class="glass-card p-5 rounded-2xl flex flex-col space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-code-commit text-mint"></i>
+                                <h3 class="text-sm font-semibold text-white">Robotic Commit Log</h3>
+                            </div>
+                            <span class="text-xs font-mono text-slate-400">HEAD -> main</span>
+                        </div>
+                        <div class="space-y-3 overflow-y-auto max-h-[450px]" id="git-commits-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Build Logs & Runner Console -->
+                    <div class="glass-card p-5 rounded-2xl flex flex-col space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-terminal text-mint"></i>
+                                <h3 class="text-sm font-semibold text-white">Autonomous CI/CD Console</h3>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span class="text-[10px] text-emerald-400 font-mono">Robot Daemon Active</span>
+                            </div>
+                        </div>
+                        <!-- Console Output Window -->
+                        <div class="flex-1 bg-slate-950 p-3 rounded-xl border border-white/10 font-mono text-xs text-slate-300 min-h-[350px] max-h-[400px] overflow-y-auto space-y-1.5" id="build-console-output">
+                            <div class="text-slate-500">[00:00:01] Kabana Studio Robot CI Daemon initialized.</div>
+                            <div class="text-slate-400">[00:00:02] Loading environment keys from secure vault...</div>
+                            <div class="text-emerald-400">[00:00:03] Success: Robot authentication verified.</div>
+                            <div class="text-slate-400">[00:00:04] Spawning Docker build container (node:20-alpine)...</div>
+                            <div class="text-slate-300">[00:00:06] Installing dependencies via ci-runner@kabana.studio...</div>
+                            <div class="text-mint">[00:00:12] All robotic test suites passed. Build artifact generated.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. RAW JSON SCHEMA VIEW -->
+            <section id="view-schema" class="flex-1 hidden flex-col p-4 md:p-6 overflow-y-auto space-y-6">
+                <div class="glass-card p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2 text-xs text-mint font-medium">
+                            <i class="fa-solid fa-database"></i>
+                            <span>Underlying Data Schema</span>
+                        </div>
+                        <h2 class="text-lg font-bold text-white">Complete Kabana Studio Repository JSON Schema</h2>
+                        <p class="text-xs text-slate-400">View, copy, or export the full embedded JSON structure featuring robotic commit authors and automated runtimes.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="copyRawJson()" class="px-4 py-2 rounded-xl bg-mint hover:bg-mint-600 text-slate-950 text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-mint/20 cursor-pointer">
+                            <i class="fa-solid fa-copy"></i>
+                            <span>Copy JSON</span>
+                        </button>
+                        <button onclick="downloadJsonFile()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center space-x-2 border border-white/10">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Export .json</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 rounded-2xl flex-1 flex flex-col">
+                    <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10 text-xs font-mono text-slate-400">
+                        <span>kabana_workspace_schema.json</span>
+                        <span id="json-stats-size" class="text-mint">~12.8 KB</span>
+                    </div>
+                    <pre class="flex-1 bg-slate-950 p-4 rounded-xl border border-white/10 font-mono text-xs text-slate-300 overflow-x-auto max-h-[500px]" id="raw-json-display"></pre>
+                </div>
+            </section>
+
         </main>
     </div>
 
-    <!-- API Source Edit Modal -->
-    <div id="api-edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-dark-800 border border-dark-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="p-4 border-b border-dark-700 flex items-center justify-between bg-dark-900/50">
-                <h3 class="font-bold text-sm text-slate-100 flex items-center gap-2"><i class="fa-solid fa-gear text-orange-500"></i> Edit API Source Node</h3>
-                <button onclick="closeApiEditModal()" class="text-slate-400 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-6 space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">API Endpoint URL</label>
-                    <input type="text" id="modal-api-url" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-orange-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">HTTP Method</label>
-                    <select id="modal-api-method" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="PUT">PUT</option>
-                        <option value="DELETE">DELETE</option>
-                    </select>
-                </div>
-            </div>
-            <div class="p-4 border-t border-dark-700 bg-dark-900/50 flex justify-end space-x-3">
-                <button onclick="closeApiEditModal()" class="px-4 py-2 text-xs bg-dark-700 hover:bg-dark-600 text-slate-200 rounded-lg transition">Cancel</button>
-                <button onclick="saveApiSourceNode()" class="px-4 py-2 text-xs bg-orange-600 hover:bg-orange-500 text-white font-medium rounded-lg transition">Save Configuration</button>
-            </div>
-        </div>
-    </div>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-    <!-- Workflow Node Edit Modal -->
-    <div id="node-edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-dark-800 border border-dark-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="p-4 border-b border-dark-700 flex items-center justify-between bg-dark-900/50">
-                <h3 class="font-bold text-sm text-slate-100 flex items-center gap-2"><i class="fa-solid fa-gear text-orange-500"></i> Configure Workflow Node</h3>
-                <button onclick="closeNodeEditModal()" class="text-slate-400 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-6 space-y-4">
-                <input type="hidden" id="edit-node-id">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Node Title</label>
-                    <input type="text" id="edit-node-title" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Language / Runtime Instance</label>
-                    <select id="edit-node-lang" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
-                        <option value="json">JSON / REST Endpoint</option>
-                        <option value="cpp">C++ (Native Engine)</option>
-                        <option value="kotlin">Kotlin (JVM Coroutine)</option>
-                        <option value="python">Python (Data Transformer)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Node Code / Configuration Payload</label>
-                    <textarea id="edit-node-payload" rows="5" class="w-full bg-dark-900 border border-dark-700 rounded-lg p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-orange-500 leading-relaxed"></textarea>
-                </div>
-            </div>
-            <div class="p-4 border-t border-dark-700 bg-dark-900/50 flex justify-end space-x-3">
-                <button onclick="closeNodeEditModal()" class="px-4 py-2 text-xs bg-dark-700 hover:bg-dark-600 text-slate-200 rounded-lg transition">Cancel</button>
-                <button onclick="saveWorkflowNodeConfig()" class="px-4 py-2 text-xs bg-orange-600 hover:bg-orange-500 text-white font-medium rounded-lg transition">Save Changes</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Git Integration Modal -->
-    <div id="git-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-dark-800 border border-dark-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="p-4 border-b border-dark-700 flex items-center justify-between bg-dark-900/50">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-brands fa-git-alt text-orange-500 text-lg"></i>
-                    <h3 class="font-bold text-sm text-slate-100">Kabana Git Integration</h3>
-                </div>
-                <button onclick="closeGitModal()" class="text-slate-400 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-6 space-y-5">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Active Branch</label>
-                    <div class="flex items-center justify-between bg-dark-900 border border-dark-700 rounded-lg p-2.5">
-                        <div class="flex items-center space-x-2 text-xs font-mono text-slate-200">
-                            <i class="fa-solid fa-code-commit text-orange-400"></i>
-                            <span>main</span>
-                            <span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-[10px]">Synced</span>
-                        </div>
-                        <select class="bg-dark-800 text-xs text-slate-200 border border-dark-700 rounded px-2 py-1 focus:outline-none">
-                            <option>main</option>
-                            <option>feature/gis-maps</option>
-                            <option>feature/cloud-storage</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Commit Message</label>
-                    <input type="text" id="git-commit-msg" placeholder="e.g., feat: integrate Leaflet GIS maps and cloud storage" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
-                </div>
-
-                <div class="bg-dark-900 border border-dark-700 rounded-lg p-3 space-y-2">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Modified Files (5)</span>
-                    <div class="space-y-1 text-xs font-mono text-slate-300">
-                        <div class="flex items-center justify-between"><span class="text-emerald-400">+ src/canvas/advancedWorkflow.js</span><span class="text-slate-500">added</span></div>
-                        <div class="flex items-center justify-between"><span class="text-emerald-400">+ src/maps/gisLeaflet.js</span><span class="text-slate-500">added</span></div>
-                        <div class="flex items-center justify-between"><span class="text-orange-400">~ src/api/endpointBuilder.js</span><span class="text-slate-500">updated</span></div>
-                        <div class="flex items-center justify-between"><span class="text-orange-400">~ src/storage/indexedDB.js</span><span class="text-slate-500">updated</span></div>
-                        <div class="flex items-center justify-between"><span class="text-slate-400">package.json</span><span class="text-slate-500">updated</span></div>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 border-t border-dark-700 bg-dark-900/50 flex justify-end space-x-3">
-                <button onclick="closeGitModal()" class="px-4 py-2 text-xs bg-dark-700 hover:bg-dark-600 text-slate-200 rounded-lg transition">Cancel</button>
-                <button onclick="performGitSync()" class="px-4 py-2 text-xs bg-orange-600 hover:bg-orange-500 text-white font-medium rounded-lg transition flex items-center space-x-1.5">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span>Commit & Push</span>
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-white/10 shadow-2xl space-y-6">
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-gear text-mint"></i>
+                    <span>Kabana Studio Settings</span>
+                </h3>
+                <button onclick="closeSettingsModal()" class="w-7 h-7 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">Workspace Name</label>
+                    <input type="text" id="settings-repo-name" value="kabana-enterprise-core" class="w-full bg-slate-900 text-slate-200 px-3 py-2 rounded-xl border border-white/10 focus:outline-none focus:border-mint">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Runtime Container Environment</label>
+                    <select id="settings-runtime" class="w-full bg-slate-900 text-slate-200 px-3 py-2 rounded-xl border border-white/10 focus:outline-none focus:border-mint">
+                        <option value="node-20">Node.js 20.11 LTS (Alpine)</option>
+                        <option value="python-3.11">Python 3.11 FastAPI</option>
+                        <option value="go-1.22">Go 1.22 Standard</option>
+                    </select>
+                </div>
+                <div class="flex items-center justify-between pt-2">
+                    <span class="text-slate-300">Live Auto-Preview Sync</span>
+                    <input type="checkbox" id="settings-auto-sync" checked class="accent-mint w-4 h-4 rounded">
+                </div>
+            </div>
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t border-white/10">
+                <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700">Cancel</button>
+                <button onclick="saveSettingsModal()" class="px-4 py-2 rounded-xl bg-mint text-slate-950 font-semibold hover:bg-mint-600">Save Changes</button>
+            </div>
         </div>
     </div>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-dark-800 border border-orange-500/50 text-slate-100 px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-3 z-50">
-        <i class="fa-solid fa-circle-check text-orange-400 text-lg"></i>
-        <div>
-            <h4 class="text-xs font-bold" id="toast-title">Success</h4>
-            <p class="text-[11px] text-slate-400" id="toast-msg">Operation completed successfully.</p>
-        </div>
-    </div>
-
-    <!-- Application Script Logic -->
+    <!-- Embedded Application JavaScript & JSON Schema -->
     <script>
-        // --- IndexedDB Management ---
-        const DB_NAME = 'KabanaStudioCloudDB';
-        const STORE_NAME = 'cloud_records';
-        let db = null;
-        let mapInstance = null;
+        // ==========================================
+        // 1. EMBEDDED KABANA STUDIO JSON SCHEMA (ROBOT USERS)
+        // ==========================================
+        const kabanaStudioData = {
+            "metadata": {
+                "application": "Kabana Studio",
+                "version": "4.5.0-enterprise-robot",
+                "schemaVersion": "2026.2",
+                "workspace": "kabana-enterprise-core",
+                "author": "Kabana Autonomous Bot Fleet",
+                "description": "Enterprise workspace schema with robotic commit authors and automated CI/CD runners."
+            },
+            "repository": {
+                "name": "kabana-enterprise-core",
+                "branch": "main",
+                "remote": "https://github.com/kabana-studio/enterprise-core.git",
+                "lastCommit": "c8e92f4",
+                "license": "MIT",
+                "defaultEnvironment": "production"
+            },
+            "runtimeEnvironments": [
+                {
+                    "id": "rt-node20",
+                    "name": "Node.js 20.11 LTS Alpine",
+                    "status": "running",
+                    "port": 3000,
+                    "memoryLimit": "2GB",
+                    "cpuShares": 1024,
+                    "clusterNodes": 4
+                },
+                {
+                    "id": "rt-redis",
+                    "name": "Redis Enterprise Cache",
+                    "status": "running",
+                    "port": 6379,
+                    "memoryLimit": "512MB",
+                    "cpuShares": 512,
+                    "clusterNodes": 2
+                },
+                {
+                    "id": "rt-postgres",
+                    "name": "PostgreSQL 16 Cluster",
+                    "status": "running",
+                    "port": 5432,
+                    "memoryLimit": "1GB",
+                    "cpuShares": 1024,
+                    "clusterNodes": 1
+                }
+            ],
+            "environmentVariables": {
+                "NODE_ENV": "production",
+                "PORT": "3000",
+                "DATABASE_URL": "postgresql://postgres:securesetup@localhost:5432/kabana_prod",
+                "REDIS_URL": "redis://default:kabana_cache@localhost:6379",
+                "JWT_SECRET": "kabanasecuretoken99827316538",
+                "LOG_LEVEL": "info",
+                "ENABLE_TELEMETRY": "true",
+                "MINT_ACCENT_COLOR": "#42BA96"
+            },
+            "services": [
+                { "name": "API Gateway", "status": "operational", "latency": "12ms", "uptime": "99.99%" },
+                { "name": "Auth Service", "status": "operational", "latency": "19ms", "uptime": "100%" },
+                { "name": "Build Runner CI", "status": "operational", "latency": "38ms", "uptime": "99.96%" },
+                { "name": "Web Dashboard", "status": "operational", "latency": "15ms", "uptime": "100%" },
+                { "name": "Asset CDN", "status": "operational", "latency": "8ms", "uptime": "100%" },
+                { "name": "Worker Queue", "status": "operational", "latency": "27ms", "uptime": "99.99%" }
+            ],
+            "builds": [
+                {
+                    "id": "build-895",
+                    "commit": "c8e92f4",
+                    "author": "Build Bot <build-bot@kabana.io>",
+                    "status": "success",
+                    "duration": "39s",
+                    "timestamp": "2 mins ago",
+                    "message": "feat(studio): add comprehensive enterprise json configuration schema"
+                },
+                {
+                    "id": "build-894",
+                    "commit": "a4f89c2",
+                    "author": "CI Runner Bot <ci-runner@kabana.studio>",
+                    "status": "success",
+                    "duration": "42s",
+                    "timestamp": "15 mins ago",
+                    "message": "feat(dashboard): integrate Linux Mint glassmorphism UI"
+                },
+                {
+                    "id": "build-893",
+                    "commit": "7b311e0",
+                    "author": "Auto Deploy <auto-deploy@kabana.internal>",
+                    "status": "success",
+                    "duration": "38s",
+                    "timestamp": "2 hours ago",
+                    "message": "fix(runtime): resolve memory leak in worker thread pool"
+                }
+            ],
+            "commits": [
+                {
+                    "hash": "c8e92f4",
+                    "author": "Build Bot <build-bot@kabana.io>",
+                    "date": "2026-06-12 14:45:00",
+                    "message": "feat(studio): add comprehensive enterprise json configuration schema",
+                    "filesChanged": 5,
+                    "additions": 310,
+                    "deletions": 15
+                },
+                {
+                    "hash": "a4f89c2",
+                    "author": "CI Runner Bot <ci-runner@kabana.studio>",
+                    "date": "2026-06-12 14:10:00",
+                    "message": "feat(dashboard): integrate Linux Mint glassmorphism UI",
+                    "filesChanged": 8,
+                    "additions": 412,
+                    "deletions": 53
+                },
+                {
+                    "hash": "7b311e0",
+                    "author": "Auto Deploy <auto-deploy@kabana.internal>",
+                    "date": "2026-06-12 11:25:40",
+                    "message": "fix(runtime): resolve memory leak in worker thread pool",
+                    "filesChanged": 3,
+                    "additions": 45,
+                    "deletions": 22
+                },
+                {
+                    "hash": "3c912fa",
+                    "author": "Kabana Robot <bot@kabana.studio>",
+                    "date": "2026-06-12 09:14:12",
+                    "message": "chore(deps): upgrade tailwindcss to v3.4.1",
+                    "filesChanged": 2,
+                    "additions": 12,
+                    "deletions": 14
+                },
+                {
+                    "hash": "9f182bc",
+                    "author": "CI Runner Bot <ci-runner@kabana.studio>",
+                    "date": "2026-06-11 18:40:05",
+                    "message": "feat(explorer): add syntax highlighting & file previewer",
+                    "filesChanged": 11,
+                    "additions": 890,
+                    "deletions": 120
+                }
+            ],
+            "files": {
+                "src/index.js": {
+                    "language": "javascript",
+                    "size": "2.6 KB",
+                    "content": `/**
+ * Kabana Studio Core Server Entrypoint
+ * Mint Green & Glassmorphic Engine v4.5
+ */
+const express = require('express');
+const http = require('http');
+const { initRuntimeCluster } = require('./cluster');
 
-        // --- Draggable & Interactive Workflow Canvas Logic ---
-        let activeDraggedNodeId = null;
-        let dragOffsetX = 0;
-        let dragOffsetY = 0;
+const app = express();
+const server = http.createServer(app);
+const PORT = process.env.PORT || 3000;
 
-        function startDragNode(e, nodeId) {
-            // Avoid dragging when clicking buttons/inputs
-            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'I' || e.target.tagName === 'INPUT') return;
-            activeDraggedNodeId = nodeId;
-            const nodeEl = document.getElementById(nodeId);
-            const rect = nodeEl.getBoundingClientRect();
-            dragOffsetX = e.clientX - rect.left;
-            dragOffsetY = e.clientY - rect.top;
-            
-            document.addEventListener('mousemove', onNodeMouseMove);
-            document.addEventListener('mouseup', onNodeMouseUp);
-        }
+app.use(express.json());
 
-        function onNodeMouseMove(e) {
-            if (!activeDraggedNodeId) return;
-            const container = document.getElementById('workflow-canvas-container');
-            const containerRect = container.getBoundingClientRect();
-            
-            const nodeEl = document.getElementById(activeDraggedNodeId);
-            let newX = e.clientX - containerRect.left - dragOffsetX + container.scrollLeft;
-            let newY = e.clientY - containerRect.top - dragOffsetY + container.scrollTop;
-            
-            nodeEl.style.left = `${Math.max(10, newX)}px`;
-            nodeEl.style.top = `${Math.max(10, newY)}px`;
-        }
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        runtime: 'Node.js 20.11 LTS',
+        accent: '#42BA96',
+        botAuthor: 'build-bot@kabana.io'
+    });
+});
 
-        function onNodeMouseUp() {
-            activeDraggedNodeId = null;
-            document.removeEventListener('mousemove', onNodeMouseMove);
-            document.removeEventListener('mouseup', onNodeMouseUp);
-        }
+initRuntimeCluster(server).then(() => {
+    server.listen(PORT, () => {
+        console.log(\`Kabana Studio running on port \${PORT} with Mint accents.\`);
+    });
+});`
+                },
+                "src/cluster.js": {
+                    "language": "javascript",
+                    "size": "1.8 KB",
+                    "content": `/**
+ * Cluster & Sandbox Supervisor
+ */
+async function initRuntimeCluster(server) {
+    console.log('[Cluster] Initializing Docker sandbox containers via ci-runner@kabana.studio...');
+    return {
+        status: 'ready',
+        nodesActive: 6
+    };
+}
 
-        function allowDrop(e) { e.preventDefault(); }
-        function dropWorkflowNode(e) { e.preventDefault(); }
-
-        function addWorkflowNode(type, lang) {
-            const layer = document.getElementById('workflow-nodes-layer');
-            const newId = 'node-' + Date.now();
-            const nodeDiv = document.createElement('div');
-            nodeDiv.id = newId;
-            nodeDiv.className = 'node-card pointer-events-auto bg-dark-800 border border-orange-500/60 rounded-xl p-4 shadow-2xl w-72 animate-in zoom-in-95 duration-200';
-            
-            const randomX = Math.floor(Math.random() * 400) + 100;
-            const randomY = Math.floor(Math.random() * 200) + 80;
-            nodeDiv.style.left = `${randomX}px`;
-            nodeDiv.style.top = `${randomY}px`;
-            nodeDiv.setAttribute('onmousedown', `startDragNode(event, '${newId}')`);
-
-            let langColor = 'text-blue-400';
-            let codeSnippet = '{"endpoint": "/api/v1/stream"}';
-            if (lang === 'cpp') {
-                langColor = 'text-purple-400';
-                codeSnippet = '#include <iostream>\\nusing namespace std;\\nint main() { cout << "Kabana C++ Worker Running" << endl; return 0; }';
-            } else if (lang === 'kotlin') {
-                langColor = 'text-amber-400';
-                codeSnippet = 'fun main() {\\n    println("Kabana Kotlin Coroutine Active")\\n}';
-            } else if (lang === 'python') {
-                langColor = 'text-emerald-400';
-                codeSnippet = 'def transform(payload):\\n    return {"status": "processed", "data": payload}';
+module.exports = { initRuntimeCluster };`
+                },
+                "public/index.html": {
+                    "language": "html",
+                    "size": "3.1 KB",
+                    "content": `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kabana Preview Widget</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #0f172a; color: #fff; padding: 2rem; text-align: center; }
+        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2rem; border-radius: 1rem; }
+        h1 { color: #42BA96; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Kabana Studio Live Preview</h1>
+        <p>Your workspace is compiled and rendering successfully by bot@kabana.studio.</p>
+        <button onclick="alert('Kabana robotic action triggered!')" style="background:#42BA96; border:none; padding:0.75rem 1.5rem; border-radius:0.5rem; color:#0f172a; font-weight:bold; cursor:pointer; margin-top:1rem;">Interactive Test</button>
+    </div>
+</body>
+</html>`
+                },
+                "package.json": {
+                    "language": "json",
+                    "size": "950 B",
+                    "content": `{
+  "name": "kabana-enterprise-core",
+  "version": "4.5.0",
+  "description": "Kabana Studio Linux Mint Cinnamon Edition",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "build": "webpack --mode production",
+    "test": "jest --coverage"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5",
+    "redis": "^4.6.13",
+    "pg": "^8.11.3"
+  }
+}`
+                }
             }
+        };
 
-            const escapedSnippet = codeSnippet.replace(/'/g, "\\'");
-            nodeDiv.innerHTML = `
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold text-orange-400 flex items-center"><i class="fa-solid fa-cube mr-1.5"></i> ${type}</span>
-                    <div class="flex items-center gap-1.5">
-                        <button onclick="openNodeEditModal('${newId}', '${type}', '${escapedSnippet}', '${lang}')" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-gear"></i></button>
-                        <button onclick="deleteWorkflowNode('${newId}')" class="text-slate-400 hover:text-red-400 text-xs"><i class="fa-solid fa-trash"></i></button>
+        let currentActiveTab = 'dashboard';
+        let currentFilePath = 'src/index.js';
+        let openTabs = ['src/index.js', 'package.json', 'public/index.html'];
+
+        // ==========================================
+        // INITIALIZATION ON WINDOW LOAD
+        // ==========================================
+        window.onload = function() {
+            renderDashboard();
+            renderFileTree();
+            renderGitCommits();
+            renderRawJson();
+            openFile(currentFilePath);
+            updateLineNumbers();
+            
+            document.getElementById('repo-name-display').innerText = kabanaStudioData.repository.name;
+            document.getElementById('settings-repo-name').value = kabanaStudioData.repository.name;
+        };
+
+        // ==========================================
+        // TAB SWITCHING LOGIC
+        // ==========================================
+        function switchTab(tabId) {
+            currentActiveTab = tabId;
+            const tabs = ['dashboard', 'explorer', 'git', 'schema'];
+            tabs.forEach(t => {
+                const viewElem = document.getElementById(`view-${t}`);
+                const navElem = document.getElementById(`nav-${t}`);
+                if (t === tabId) {
+                    viewElem.classList.remove('hidden');
+                    viewElem.classList.add('flex');
+                    if (navElem) {
+                        navElem.classList.add('tab-active', 'text-slate-100');
+                        navElem.classList.remove('text-slate-400');
+                    }
+                } else {
+                    viewElem.classList.add('hidden');
+                    viewElem.classList.remove('flex');
+                    if (navElem) {
+                        navElem.classList.remove('tab-active', 'text-slate-100');
+                        navElem.classList.add('text-slate-400');
+                    }
+                }
+            });
+            showToast(`Switched to ${tabId.toUpperCase()} view`, 'info');
+        }
+
+        // ==========================================
+        // DASHBOARD RENDERER
+        // ==========================================
+        function renderDashboard() {
+            const buildsList = document.getElementById('dashboard-builds-list');
+            buildsList.innerHTML = kabanaStudioData.builds.map(b => `
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-white/5 hover:border-mint/30 transition-all">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center ${b.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}">
+                            <i class="fa-solid ${b.status === 'success' ? 'fa-robot' : 'fa-xmark'} text-xs"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-white flex items-center space-x-2">
+                                <span>Build #${b.id.replace('build-', '')}</span>
+                                <span class="text-[10px] font-mono text-mint px-1.5 py-0.5 rounded bg-mint/10">${b.commit}</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 truncate max-w-xs md:max-w-md">${b.message}</p>
+                            <span class="text-[10px] text-mint/80 font-mono">${b.author}</span>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <span class="text-[11px] text-slate-300 font-medium">${b.duration}</span>
+                        <p class="text-[10px] text-slate-500">${b.timestamp}</p>
                     </div>
                 </div>
-                <p class="text-xs text-slate-400 mb-1 truncate">Runtime: <code class="text-slate-200 bg-dark-900 px-1 py-0.5 rounded">${lang.toUpperCase()} Worker</code></p>
-                <p class="text-xs text-slate-400 mb-3">Language: <span class="${langColor} font-mono font-bold">${lang.toUpperCase()}</span></p>
-                <div class="text-[10px] text-slate-500 border-t border-dark-700 pt-2 flex justify-between items-center">
-                    <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Ready</span>
-                    <button onclick="testNodeExecution('${newId}')" class="bg-orange-600/20 hover:bg-orange-600 text-orange-300 hover:text-white px-2 py-0.5 rounded transition text-[10px]">Run Node</button>
-                </div>
-            `;
-            layer.appendChild(nodeDiv);
-            showToast("Node Added", `Successfully added ${type} (${lang.toUpperCase()}) to canvas.`);
-        }
+            `).join('');
 
-        function deleteWorkflowNode(nodeId) {
-            const el = document.getElementById(nodeId);
-            if (el) {
-                el.remove();
-                showToast("Node Deleted", `Removed workflow node #${nodeId}`);
-            }
-        }
-
-        function openNodeEditModal(nodeId, title, payload, lang) {
-            document.getElementById('edit-node-id').value = nodeId;
-            document.getElementById('edit-node-title').value = title;
-            document.getElementById('edit-node-lang').value = lang;
-            document.getElementById('edit-node-payload').value = payload;
-            document.getElementById('node-edit-modal').classList.remove('hidden');
-        }
-
-        function closeNodeEditModal() {
-            document.getElementById('node-edit-modal').classList.add('hidden');
-        }
-
-        function saveWorkflowNodeConfig() {
-            const nodeId = document.getElementById('edit-node-id').value;
-            const title = document.getElementById('edit-node-title').value;
-            const lang = document.getElementById('edit-node-lang').value;
-            const payload = document.getElementById('edit-node-payload').value;
-            
-            const nodeEl = document.getElementById(nodeId);
-            if (nodeEl) {
-                let langColor = 'text-blue-400';
-                if (lang === 'cpp') langColor = 'text-purple-400';
-                if (lang === 'kotlin') langColor = 'text-amber-400';
-                if (lang === 'python') langColor = 'text-emerald-400';
-
-                nodeEl.querySelector('.text-orange-400').innerHTML = `<i class="fa-solid fa-cube mr-1.5"></i> ${title}`;
-                nodeEl.querySelectorAll('p')[1].innerHTML = `Language: <span class="${langColor} font-mono font-bold">${lang.toUpperCase()}</span>`;
-            }
-            closeNodeEditModal();
-            showToast("Node Updated", `Successfully saved configuration for node #${nodeId}`);
-        }
-
-        function testNodeExecution(nodeId) {
-            showToast("Node Executed", `Successfully ran execution for node #${nodeId} in sandbox runtime.`);
-        }
-
-        function initIndexedDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, 1);
-                request.onerror = (event) => {
-                    console.error("IndexedDB error:", event.target.error);
-                    resolve(null);
-                };
-                request.onsuccess = (event) => {
-                    db = event.target.result;
-                    console.log("Cloud IndexedDB connected.");
-                    loadDatabaseRecords();
-                    resolve(db);
-                };
-                request.onupgradeneeded = (event) => {
-                    const database = event.target.result;
-                    if (!database.objectStoreNames.contains(STORE_NAME)) {
-                        database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-                    }
-                };
-            });
-        }
-
-        function seedDatabaseRecords() {
-            if (!db) {
-                showToast("Database Notice", "IndexedDB connecting...", "info");
-                return;
-            }
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            
-            const sampleData = [
-                { itemName: "IoT Telemetry Stream #1", amount: 480.20, status: "Synced S3", timestamp: new Date().toLocaleString() },
-                { itemName: "Global API Route /v1/telemetry", amount: 1250.00, status: "Active", timestamp: new Date().toLocaleString() },
-                { itemName: "GIS Spatial Coordinates Sync", amount: 320.00, status: "Cached", timestamp: new Date().toLocaleString() }
-            ];
-
-            sampleData.forEach(item => store.add(item));
-
-            transaction.oncomplete = () => {
-                showToast("Cloud Storage Updated", "Sample records synced to IndexedDB & Cloud Storage.");
-                loadDatabaseRecords();
-            };
-        }
-
-        function loadDatabaseRecords() {
-            if (!db) return;
-            const transaction = db.transaction([STORE_NAME], 'readonly');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.getAll();
-
-            request.onsuccess = () => {
-                const records = request.result;
-                const tbody = document.getElementById('db-records-table');
-                document.getElementById('item-count').innerText = `${records.length} items`;
-                
-                if (records.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">No records found. Click 'Seed Storage Data' to populate.</td></tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = records.map(r => `
-                    <tr class="hover:bg-dark-700/30 transition">
-                        <td class="p-3 font-mono text-orange-400">#${r.id}</td>
-                        <td class="p-3 font-medium text-slate-200">${r.itemName || 'N/A'}</td>
-                        <td class="p-3">$${(r.amount || 0).toFixed(2)}</td>
-                        <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-400 font-semibold">${r.status || 'Active'}</span></td>
-                        <td class="p-3 text-slate-400 text-[11px]">${r.timestamp || new Date().toLocaleString()}</td>
-                        <td class="p-3 text-right">
-                            <button onclick="deleteRecord(${r.id})" class="text-slate-500 hover:text-red-400 transition p-1"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `).join('');
-            };
-        }
-
-        function deleteRecord(id) {
-            if (!db) return;
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            store.delete(id);
-            transaction.oncomplete = () => {
-                showToast("Record Deleted", `Successfully removed record #${id}`);
-                loadDatabaseRecords();
-            };
-        }
-
-        function saveProjectToDB() {
-            if (!db) return;
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            store.add({
-                itemName: "Cloud Studio Snapshot",
-                amount: 888.50,
-                status: "Persisted",
-                timestamp: new Date().toLocaleString()
-            });
-            transaction.oncomplete = () => {
-                showToast("Sync Successful", "Project state safely committed to IndexedDB and Cloud Storage!");
-                loadDatabaseRecords();
-            };
-        }
-
-        // --- Project Navigator Tree ---
-        const projectFiles = [
-            { name: "src", type: "folder" },
-            { name: "src/workflow-engine.js", type: "file" },
-            { name: "src/api-builder.js", type: "file" },
-            { name: "src/gis-map.js", type: "file" },
-            { name: "config/cloud-storage.json", type: "file" },
-            { name: "README.md", type: "file" }
-        ];
-
-        function renderFileTree(files, container) {
-            container.innerHTML = '';
-            files.forEach(file => {
-                const div = document.createElement('div');
-                div.className = 'py-1 px-2 rounded hover:bg-dark-700/50 cursor-pointer flex items-center justify-between text-slate-300 text-xs transition';
-                if (file.type === 'folder') {
-                    div.innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-folder text-amber-500"></i> ${file.name}</span>`;
-                } else {
-                    div.innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-file-code text-blue-400"></i> ${file.name}</span>`;
-                    div.onclick = () => showToast("File Opened", `Loaded ${file.name} into editor.`);
-                }
-                container.appendChild(div);
-            });
-        }
-
-        function filterNavigator() {
-            const query = document.getElementById('nav-search').value.toLowerCase();
-            const container = document.getElementById('file-tree-container');
-            const filtered = projectFiles.filter(f => f.name.toLowerCase().includes(query));
-            container.innerHTML = filtered.map(f => `
-                <div class="py-1 px-2 rounded hover:bg-dark-700/50 cursor-pointer flex items-center text-slate-300 text-xs">
-                    <i class="fa-solid fa-file-code text-blue-400 mr-2"></i> ${f.name}
+            const servicesList = document.getElementById('dashboard-services-list');
+            servicesList.innerHTML = kabanaStudioData.services.map(s => `
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/40 border border-white/5">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-500/50"></span>
+                        <span class="text-xs font-medium text-slate-200">${s.name}</span>
+                    </div>
+                    <div class="flex items-center space-x-3 text-[11px] font-mono text-slate-400">
+                        <span>${s.latency}</span>
+                        <span class="text-emerald-400">${s.uptime}</span>
+                    </div>
                 </div>
             `).join('');
         }
 
-        function createNewFile() {
-            const fileName = prompt("Enter new module file name:", "apiConnector.js");
-            if (fileName) {
-                showToast("File Created", `Successfully created ${fileName}`);
-            }
-        }
-
-        // --- Tabs Management ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.workspace-view').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('bg-dark-900', 'text-orange-400', 'border-t-2', 'border-orange-500');
-                el.classList.add('bg-dark-800', 'text-slate-400');
-            });
-
-            document.getElementById(`view-${tabId}`).classList.remove('hidden');
-            const activeTab = document.getElementById(`tab-${tabId}`);
-            activeTab.classList.remove('bg-dark-800', 'text-slate-400');
-            activeTab.classList.add('bg-dark-900', 'text-orange-400', 'border-t-2', 'border-orange-500');
-
-            if (tabId === 'storage') {
-                loadDatabaseRecords();
-            }
-            if (tabId === 'maps') {
-                setTimeout(initLeafletMap, 150);
-            }
-        }
-
-        // --- Leaflet GIS Map Initialization ---
-        function initLeafletMap() {
-            const mapContainer = document.getElementById('leaflet-map');
-            if (!mapContainer) return;
+        // ==========================================
+        // FILE EXPLORER & EDITOR LOGIC
+        // ==========================================
+        function renderFileTree() {
+            const container = document.getElementById('file-tree-container');
+            const files = Object.keys(kabanaStudioData.files);
             
-            if (!mapInstance) {
-                // Initialize map centered around Nordics / Europe coordinates
-                mapInstance = L.map('leaflet-map').setView([62.9167, 7.8333], 7);
+            container.innerHTML = files.map(path => {
+                const isActive = path === currentFilePath;
+                const isFolder = path.includes('/');
+                const fileName = isFolder ? path.split('/').pop() : path;
+                const folderName = isFolder ? path.split('/')[0] + '/' : '';
                 
-                // Dark mode tile layer matching Kabana UI
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-                    maxZoom: 19
-                }).addTo(mapInstance);
+                return `
+                    <div onclick="openFile('${path}')" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${isActive ? 'bg-mint/15 text-mint font-semibold border border-mint/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}">
+                        <div class="flex items-center space-x-2 truncate">
+                            <i class="fa-regular ${path.endsWith('.js') ? 'fa-file-js text-amber-400' : path.endsWith('.html') ? 'fa-file-code text-rose-400' : path.endsWith('.json') ? 'fa-file-code text-emerald-400' : 'fa-file-lines text-blue-400'}"></i>
+                            <span class="truncate text-xs"><span class="text-slate-500 text-[10px]">${folderName}</span>${fileName}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 font-mono">${kabanaStudioData.files[path].size}</span>
+                    </div>
+                `;
+            }).join('');
 
-                // Add interactive markers connected to pipeline nodes
-                const markers = [
-                    { lat: 62.9167, lng: 7.8333, title: "Gjemnes Telemetry Hub #01" },
-                    { lat: 59.9139, lng: 10.7522, title: "Oslo Cloud Gateway #02" },
-                    { lat: 63.4305, lng: 10.3951, title: "Trondheim Sensor Unit #03" },
-                    { lat: 60.3913, lng: 5.3221, title: "Bergen Analytics Node #04" }
-                ];
+            renderEditorTabs();
+        }
 
-                markers.forEach(m => {
-                    L.marker([m.lat, m.lng]).addTo(mapInstance)
-                        .bindPopup(`<b style="color:#f97316;">Kabana Node</b><br>${m.title}<br><span style="color:#10b981;">Status: Online</span>`);
+        function renderEditorTabs() {
+            const tabsContainer = document.getElementById('editor-tabs');
+            tabsContainer.innerHTML = openTabs.map(path => {
+                const isActive = path === currentFilePath;
+                const name = path.split('/').pop();
+                return `
+                    <div onclick="openFile('${path}')" class="flex items-center space-x-2 px-3 py-1.5 rounded-t-lg cursor-pointer text-xs font-mono border-t ${isActive ? 'bg-slate-950 text-mint border-mint border-x border-x-white/10' : 'text-slate-400 hover:text-slate-200 bg-slate-900/50 border-transparent'}">
+                        <span>${name}</span>
+                        <button onclick="event.stopPropagation(); closeTab('${path}')" class="hover:text-rose-400 ml-1"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openFile(path) {
+            if (!kabanaStudioData.files[path]) return;
+            currentFilePath = path;
+            if (!openTabs.includes(path)) {
+                openTabs.push(path);
+            }
+            
+            document.getElementById('current-filepath').innerText = path;
+            const lang = kabanaStudioData.files[path].language;
+            document.getElementById('current-lang-badge').innerText = lang.toUpperCase();
+            document.getElementById('code-editor-textarea').value = kabanaStudioData.files[path].content;
+            
+            updateLineNumbers();
+            renderFileTree();
+            
+            if (path.endsWith('.html')) {
+                runCodePreview();
+            }
+        }
+
+        function closeTab(path) {
+            openTabs = openTabs.filter(p => p !== path);
+            if (openTabs.length === 0) {
+                openTabs.push(Object.keys(kabanaStudioData.files)[0]);
+            }
+            if (currentFilePath === path) {
+                openFile(openTabs[0]);
+            } else {
+                renderEditorTabs();
+            }
+        }
+
+        function updateLineNumbers() {
+            const textarea = document.getElementById('code-editor-textarea');
+            const lines = textarea.value.split('\n').length;
+            let lineNumbersHtml = '';
+            for (let i = 1; i <= Math.max(lines, 10); i++) {
+                lineNumbersHtml += i + '<br>';
+            }
+            document.getElementById('editor-line-numbers').innerHTML = lineNumbersHtml;
+        }
+
+        function saveCurrentFile() {
+            const content = document.getElementById('code-editor-textarea').value;
+            if (kabanaStudioData.files[currentFilePath]) {
+                kabanaStudioData.files[currentFilePath].content = content;
+                const sizeKB = (content.length / 1024).toFixed(1) + ' KB';
+                kabanaStudioData.files[currentFilePath].size = sizeKB;
+                showToast(`Successfully saved ${currentFilePath}`, 'success');
+                renderFileTree();
+                renderRawJson();
+                if (currentFilePath.endsWith('.html')) {
+                    runCodePreview();
+                }
+            }
+        }
+
+        function runCodePreview() {
+            const previewFrame = document.getElementById('live-preview-frame');
+            const htmlContent = kabanaStudioData.files['public/index.html'] ? kabanaStudioData.files['public/index.html'].content : '<h1>No HTML Preview</h1>';
+            
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const blobUrl = URL.createObjectURL(blob);
+            previewFrame.src = blobUrl;
+            showToast('Live preview container refreshed', 'success');
+        }
+
+        function refreshPreviewFrame() {
+            runCodePreview();
+        }
+
+        function filterFileTree() {
+            const query = document.getElementById('file-search-input').value.toLowerCase();
+            const container = document.getElementById('file-tree-container');
+            const files = Object.keys(kabanaStudioData.files).filter(f => f.toLowerCase().includes(query));
+            
+            container.innerHTML = files.map(path => {
+                const isActive = path === currentFilePath;
+                return `
+                    <div onclick="openFile('${path}')" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${isActive ? 'bg-mint/15 text-mint font-semibold border border-mint/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}">
+                        <div class="flex items-center space-x-2 truncate">
+                            <i class="fa-regular fa-file-lines text-blue-400"></i>
+                            <span class="truncate text-xs">${path}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function refreshFileExplorer() {
+            renderFileTree();
+            showToast('File tree refreshed', 'info');
+        }
+
+        // ==========================================
+        // GIT COMMITS & BUILDS LOGIC
+        // ==========================================
+        function renderGitCommits() {
+            const container = document.getElementById('git-commits-list');
+            container.innerHTML = kabanaStudioData.commits.map(c => `
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-white/5 hover:border-mint/30 transition-all space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-mono font-semibold text-mint bg-mint/10 px-2 py-0.5 rounded">${c.hash}</span>
+                        <span class="text-[10px] text-slate-500">${c.date}</span>
+                    </div>
+                    <p class="text-xs font-medium text-white">${c.message}</p>
+                    <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-white/5">
+                        <span class="text-mint font-mono">${c.author}</span>
+                        <div class="space-x-2 font-mono">
+                            <span class="text-emerald-400">+${c.additions}</span>
+                            <span class="text-rose-400">-${c.deletions}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function triggerGlobalBuild() {
+            switchTab('git');
+            const consoleBox = document.getElementById('build-console-output');
+            const now = new Date().toLocaleTimeString();
+            
+            consoleBox.innerHTML += `
+                <div class="text-mint">[${now}] Triggering automated robot CI/CD build pipeline...</div>
+                <div class="text-slate-400">[${now}] Authenticating robot user <span class="text-mint">ci-runner@kabana.studio</span>...</div>
+                <div class="text-slate-300">[${now}] Executing automated test suite and container linting...</div>
+            `;
+            
+            setTimeout(() => {
+                consoleBox.innerHTML += `
+                    <div class="text-emerald-400">[${new Date().toLocaleTimeString()}] Robot Build Success! All tests verified by build-bot@kabana.io.</div>
+                `;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+                showToast('Robotic build completed successfully!', 'success');
+            }, 1200);
+
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+            showToast('Robot build runner initiated...', 'info');
+        }
+
+        // ==========================================
+        // RAW JSON SCHEMA LOGIC
+        // ==========================================
+        function renderRawJson() {
+            const jsonString = JSON.stringify(kabanaStudioData, null, 2);
+            document.getElementById('raw-json-display').innerText = jsonString;
+            document.getElementById('json-stats-size').innerText = `${(jsonString.length / 1024).toFixed(1)} KB`;
+        }
+
+        function copyRawJson() {
+            const jsonString = JSON.stringify(kabanaStudioData, null, 2);
+            const textarea = document.createElement('textarea');
+            textarea.value = jsonString;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Repository JSON with robot authors copied!', 'success');
+            } catch (err) {
+                showToast('Failed to copy JSON', 'error');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function downloadJsonFile() {
+            const jsonString = JSON.stringify(kabanaStudioData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'kabana_workspace_schema.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('JSON file downloaded successfully', 'success');
+        }
+
+        // ==========================================
+        // MODAL & TOAST SYSTEM
+        // ==========================================
+        function openSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+            document.getElementById('settings-modal').classList.add('flex');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('flex');
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function saveSettingsModal() {
+            const repoName = document.getElementById('settings-repo-name').value;
+            kabanaStudioData.repository.name = repoName;
+            document.getElementById('repo-name-display').innerText = repoName;
+            closeSettingsModal();
+            showToast('Settings saved successfully', 'success');
+            renderRawJson();
+        }
+
+        function toggleMaximize() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    showToast('Fullscreen mode not permitted', 'info');
                 });
             } else {
-                mapInstance.invalidateSize();
-            }
-        }
-
-        // --- API Source Edit Functions ---
-        function editApiSourceNode(btn) {
-            const currentUrl = document.getElementById('node-url-1').innerText;
-            document.getElementById('modal-api-url').value = currentUrl;
-            document.getElementById('api-edit-modal').classList.remove('hidden');
-        }
-
-        function closeApiEditModal() {
-            document.getElementById('api-edit-modal').classList.add('hidden');
-        }
-
-        function saveApiSourceNode() {
-            const newUrl = document.getElementById('modal-api-url').value;
-            const newMethod = document.getElementById('modal-api-method').value;
-            document.getElementById('node-url-1').innerText = newUrl;
-            document.getElementById('node-method-1').innerText = newMethod;
-            closeApiEditModal();
-            showToast("API Source Updated", `Endpoint successfully reconfigured to ${newUrl}`);
-        }
-
-        function testNodeApiCall(nodeId) {
-            showToast("API Test Executed", `Successfully queried Node #${nodeId}. Response 200 OK.`);
-        }
-
-        // --- API Build Editor Functions ---
-        function selectEndpoint(endpointName) {
-            document.getElementById('selected-endpoint-title').innerText = endpointName;
-            showToast("Endpoint Selected", `Loaded configuration for ${endpointName}`);
-        }
-
-        function createNewApiEndpoint() {
-            const route = prompt("Enter new API route path:", "/api/v1/analytics");
-            if (route) {
-                showToast("API Created", `Successfully built endpoint ${route}`);
-            }
-        }
-
-        function deployEndpoint() {
-            showToast("Deployment Success", "Micro-API endpoint successfully deployed to Cloud Runtime!");
-        }
-
-        // --- Sandbox Execution Engine ---
-        async function runAdvancedSandboxPipeline() {
-            switchTab('sandbox');
-            const output = document.getElementById('runtime-console-output');
-            output.innerHTML += `<p class="text-orange-400">> Executing advanced sandbox pipeline...</p>`;
-            
-            try {
-                const code = document.getElementById('runtime-code-input').value;
-                const result = await eval(`(async () => { ${code} })()`);
-                output.innerHTML += `<p class="text-emerald-400">[SUCCESS] Sandbox unit execution returned:</p>`;
-                output.innerHTML += `<pre class="bg-dark-900 p-2 rounded text-slate-300 text-[11px] overflow-x-auto">${JSON.stringify(result, null, 2)}</pre>`;
-                
-                if (db) {
-                    const tx = db.transaction([STORE_NAME], 'readwrite');
-                    tx.objectStore(STORE_NAME).add({
-                        itemName: "Sandbox Unit Execution Log",
-                        amount: Math.floor(Math.random() * 500) + 50,
-                        status: "Executed Successfully",
-                        timestamp: new Date().toLocaleString()
-                    });
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
                 }
-            } catch (err) {
-                output.innerHTML += `<p class="text-red-400">[ERROR] ${err.message}</p>`;
             }
-            output.scrollTop = output.scrollHeight;
         }
 
-        function clearConsole() {
-            document.getElementById('runtime-console-output').innerHTML = `<p class="text-slate-500">// Sandbox console cleared.</p>`;
-        }
-
-        // --- Workflow Builder ---
-        function addWorkflowNode(type) {
-            const grid = document.getElementById('workflow-nodes-grid');
-            const nodeDiv = document.createElement('div');
-            nodeDiv.className = 'bg-dark-800 border border-dark-700 rounded-xl p-4 shadow-xl relative node-card group hover:border-orange-500 transition animate-in zoom-in-95 duration-200';
-            nodeDiv.innerHTML = `
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold text-orange-400 flex items-center"><i class="fa-solid fa-cube mr-1.5"></i> ${type}</span>
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                </div>
-                <p class="text-xs text-slate-400 mb-3">Custom Pipeline Unit</p>
-                <div class="text-[10px] text-slate-500 border-t border-dark-700 pt-2 flex justify-between">
-                    <span>Status: Active</span>
-                    <span class="text-orange-400">Node #${Math.floor(Math.random() * 90) + 10}</span>
-                </div>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-slate-900 border-mint/30 text-slate-200';
+            let icon = 'fa-circle-info text-mint';
+            
+            if (type === 'success') {
+                bgClass = 'bg-slate-900 border-emerald-500/30 text-slate-200';
+                icon = 'fa-circle-check text-emerald-400';
+            } else if (type === 'error') {
+                bgClass = 'bg-slate-900 border-rose-500/30 text-slate-200';
+                icon = 'fa-triangle-exclamation text-rose-400';
+            }
+            
+            toast.className = `glass-card px-4 py-3 rounded-xl border shadow-xl flex items-center space-x-3 text-xs pointer-events-auto transition-all animate-bounce ${bgClass}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon}"></i>
+                <span>${message}</span>
             `;
-            grid.appendChild(nodeDiv);
-            showToast("Node Added", `Successfully added ${type} to advanced workflow canvas.`);
-        }
-
-        // --- Git Modal ---
-        function openGitModal() {
-            document.getElementById('git-modal').classList.remove('hidden');
-        }
-
-        function closeGitModal() {
-            document.getElementById('git-modal').classList.add('hidden');
-        }
-
-        function performGitSync() {
-            const msg = document.getElementById('git-commit-msg').value || "feat: update cloud storage & maps integration";
-            closeGitModal();
-            showToast("Git Sync Successful", `Committed & pushed: "${msg}"`);
-        }
-
-        // --- Toast Notification ---
-        function showToast(title, message, type = 'success') {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-title').innerText = title;
-            document.getElementById('toast-msg').innerText = message;
-            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            container.appendChild(toast);
             setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3500);
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
-
-        // Initialize on load
-        window.onload = () => {
-            renderFileTree(projectFiles, document.getElementById('file-tree-container'));
-            initIndexedDB().then(() => {
-                console.log("Kabana Studio fully initialized with Cloud & IndexedDB storage.");
-            });
-        };
     </script>
 </body>
 </html>
