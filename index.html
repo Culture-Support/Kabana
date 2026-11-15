@@ -2,1138 +2,277 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kabana Studio </title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Snowflake Dark Diagnostic & TensorFlow Analytics Warehouse</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        mint: {
-                            50: '#f0fdf9',
-                            100: '#ccfbf1',
-                            400: '#2dd4bf',
-                            500: '#14b8a6',
-                            600: '#0d9488',
-                            700: '#0f766e',
-                            800: '#115e59',
-                            DEFAULT: '#42BA96',
-                            accent: '#70C1B3'
-                        },
-                        glass: {
-                            dark: 'rgba(15, 23, 42, 0.75)',
-                            light: 'rgba(255, 255, 255, 0.75)',
-                            border: 'rgba(255, 255, 255, 0.12)'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                        mono: ['Fira Code', 'JetBrains Mono', 'Menlo', 'monospace']
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #090d16 0%, #111c2e 50%, #0d1b2a 100%);
-            color: #e2e8f0;
-            min-height: 100dvh;
-            overflow-x: hidden;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
         .glass-panel {
-            background: rgba(15, 23, 42, 0.65);
+            background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
-        .glass-sidebar {
-            background: rgba(11, 18, 32, 0.75);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .glass-card {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            transition: all 0.2s ease;
-        }
-        .glass-card:hover {
-            border-color: rgba(66, 186, 150, 0.3);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-        /* Custom scrollbar */
+        .mint-accent { color: #42BA96; }
+        .mint-bg { background-color: #42BA96; }
+        .mint-border { border-color: #42BA96; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
-        ::-webkit-scrollbar-thumb { background: rgba(66, 186, 150, 0.3); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(66, 186, 150, 0.6); }
-
-        .mint-glow {
-            box-shadow: 0 0 20px rgba(66, 186, 150, 0.25);
-        }
-        .tab-active {
-            background: linear-gradient(135deg, rgba(66, 186, 150, 0.2) 0%, rgba(14, 116, 144, 0.2) 100%);
-            border-color: #42BA96;
-            color: #70C1B3;
-        }
+        ::-webkit-scrollbar-track { background: #0b0f19; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #42BA96; }
     </style>
 </head>
-<body class="min-h-[100dvh] flex flex-col text-slate-100 selection:bg-mint/30 selection:text-mint-100">
+<body class="w-full overflow-x-hidden min-h-dvh flex flex-col">
 
-    <!-- Top Window Titlebar (macOS / Linux Mint Cinnamon Hybrid Style) -->
-    <header class="h-12 glass-panel border-b border-white/10 flex items-center justify-between px-4 sticky top-0 z-50 select-none">
+    <!-- Top Navigation Header -->
+    <header class="glass-panel sticky top-0 z-50 px-6 py-4 flex items-center justify-between border-b border-slate-800">
         <div class="flex items-center space-x-3">
-            <!-- Window Control Dots -->
-            <div class="flex items-center space-x-2">
-                <button onclick="showToast('Window minimized', 'info')" class="w-3 h-3 rounded-full bg-rose-500 hover:bg-rose-600 transition-colors focus:outline-none" title="Minimize"></button>
-                <button onclick="toggleMaximize()" class="w-3 h-3 rounded-full bg-amber-500 hover:bg-amber-600 transition-colors focus:outline-none" title="Maximize"></button>
-                <button onclick="showToast('Kabana Studio v4.5 active', 'success')" class="w-3 h-3 rounded-full bg-emerald-500 hover:bg-emerald-600 transition-colors focus:outline-none" title="Restore"></button>
-            </div>
-            <div class="h-4 w-[1px] bg-white/10 mx-1"></div>
-            <!-- App Branding -->
-            <div class="flex items-center space-x-2">
-                <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-mint to-teal-600 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-mint/20">
-                    <i class="fa-solid fa-cube text-xs"></i>
-                </div>
-                <span class="font-bold text-sm tracking-wide bg-gradient-to-r from-white via-slate-200 to-mint-400 bg-clip-text text-transparent">Kabana Studio</span>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-mint/10 text-mint border border-mint/20 hidden sm:inline-block font-mono">v4.5-robot</span>
+            <div class="w-9 h-9 rounded-xl mint-bg flex items-center justify-center font-bold text-slate-950 text-xl shadow-lg shadow-emerald-900/20">❄</div>
+            <div>
+                <h1 class="font-bold text-lg tracking-wide text-white flex items-center gap-2">
+                    SNOWFLAKE <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 mint-accent border mint-border">DIAGNOSTIC WAREHOUSE v4.8</span>
+                </h1>
+                <p class="text-xs text-slate-400">Multi-Cloud TensorBoard Analytics & Library Registry</p>
             </div>
         </div>
-
-        <!-- Global Status / Quick Actions -->
-        <div class="flex items-center space-x-3">
-            <div class="hidden md:flex items-center space-x-2 text-xs text-slate-400 bg-slate-900/60 px-3 py-1 rounded-full border border-white/5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Runtime: <strong class="text-slate-200">Node v20.11 LTS</strong></span>
-                <span class="text-slate-600">|</span>
-                <span>Branch: <strong class="text-mint font-mono">main</strong></span>
+        <div class="hidden md:flex items-center space-x-6 text-sm text-slate-300">
+            <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Active Compute Node: <strong class="text-white">SNOW-WH-ML-XTRA</strong></span>
             </div>
-            <button onclick="triggerGlobalBuild()" class="px-3 py-1.5 rounded-lg bg-mint hover:bg-mint-600 text-slate-950 text-xs font-semibold flex items-center space-x-2 transition-all shadow-md shadow-mint/20 active:scale-95 cursor-pointer">
-                <i class="fa-solid fa-play"></i>
-                <span class="hidden sm:inline">Build & Run</span>
-            </button>
-            <button onclick="openSettingsModal()" class="w-8 h-8 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors border border-white/5">
-                <i class="fa-solid fa-gear text-xs"></i>
-            </button>
+            <div class="code-font text-xs bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                Registry Index: <span class="mint-accent">2,000,000</span> Libs
+            </div>
         </div>
     </header>
 
-    <!-- Main Workspace Layout -->
-    <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-
-        <!-- Sidebar Navigation -->
-        <aside class="glass-sidebar w-full md:w-64 flex md:flex-col justify-between p-2 md:p-4 z-20 shrink-0">
-            <div class="flex md:flex-col w-full justify-around md:justify-start md:space-y-6">
-                <!-- Workspace Selector Header -->
-                <div class="hidden md:block pb-4 border-b border-white/10">
-                    <p class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Active Repository</p>
-                    <div class="flex items-center justify-between bg-slate-900/80 p-2.5 rounded-xl border border-white/5">
-                        <div class="flex items-center space-x-2 overflow-hidden">
-                            <i class="fa-brands fa-git-alt text-mint"></i>
-                            <span class="text-xs font-medium truncate text-slate-200" id="repo-name-display">kabana-enterprise-core</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+    <!-- Main Content Body -->
+    <main class="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left Panel: Library & NPM Search Matrix -->
+        <section class="glass-panel rounded-2xl p-5 flex flex-col space-y-4 lg:col-span-1">
+            <div class="flex justify-between items-center">
+                <h2 class="font-semibold text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 mint-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    NPM & Library Registry
+                </h2>
+                <span class="text-xs text-slate-400 code-font">Scope: 2M Index</span>
+            </div>
+            <div class="relative">
+                <input type="text" id="libSearch" placeholder="Search 2M packages (e.g. tensorflow, cuda...)" 
+                    class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
+            </div>
+            <div id="libraryList" class="flex-1 space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+                <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <div class="text-sm font-semibold text-white">@tensorflow/tfjs-node</div>
+                        <div class="text-xs text-slate-400">v4.18.0 • Bindings for Node.js</div>
                     </div>
+                    <span class="text-xs px-2 py-1 bg-emerald-500/10 mint-accent rounded-lg border mint-border">Indexed</span>
                 </div>
-
-                <!-- Navigation Tabs -->
-                <nav class="flex md:flex-col space-x-1 md:space-x-0 md:space-y-1.5 w-full">
-                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex-1 md:flex-none flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all tab-active group">
-                        <i class="fa-solid fa-chart-pie w-5 text-center text-mint group-hover:scale-110 transition-transform"></i>
-                        <span class="hidden md:inline">Dashboard</span>
-                    </button>
-                    <button onclick="switchTab('explorer')" id="nav-explorer" class="flex-1 md:flex-none flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-white/5 group">
-                        <i class="fa-solid fa-code w-5 text-center group-hover:scale-110 transition-transform"></i>
-                        <span class="hidden md:inline">File Explorer & Editor</span>
-                    </button>
-                    <button onclick="switchTab('git')" id="nav-git" class="flex-1 md:flex-none flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-white/5 group">
-                        <i class="fa-solid fa-code-commit w-5 text-center group-hover:scale-110 transition-transform"></i>
-                        <span class="hidden md:inline">Git Commits & Builds</span>
-                    </button>
-                    <button onclick="switchTab('schema')" id="nav-schema" class="flex-1 md:flex-none flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-white/5 group">
-                        <i class="fa-solid fa-database w-5 text-center group-hover:scale-110 transition-transform"></i>
-                        <span class="hidden md:inline">Raw JSON Schema</span>
-                    </button>
-                </nav>
+                <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <div class="text-sm font-semibold text-white">snowflake-sdk</div>
+                        <div class="text-xs text-slate-400">v1.8.0 • Cloud Data Driver</div>
+                    </div>
+                    <span class="text-xs px-2 py-1 bg-emerald-500/10 mint-accent rounded-lg border mint-border">Cached</span>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <div class="text-sm font-semibold text-white">tensorboard-gui-partition</div>
+                        <div class="text-xs text-slate-400">v2.11.4 • Telemetry Visualizer</div>
+                    </div>
+                    <span class="text-xs px-2 py-1 bg-emerald-500/10 mint-accent rounded-lg border mint-border">Active</span>
+                </div>
             </div>
 
-            <!-- Sidebar Footer Status -->
-            <div class="hidden md:block pt-4 border-t border-white/10">
-                <div class="glass-card p-3 rounded-xl">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-[11px] font-medium text-slate-300">Memory Usage</span>
-                        <span class="text-[10px] text-mint font-mono" id="memory-stat">442MB / 2GB</span>
+            <!-- Resource Footprint Estimator Section -->
+            <div class="pt-4 border-t border-slate-800">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">ML App Size Footprint Sizer</h3>
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span>App Payload Size:</span>
+                            <span id="sizeLabel" class="mint-accent font-bold">2.5 GB</span>
+                        </div>
+                        <input type="range" id="appSizeRange" min="0.002" max="100" step="0.5" value="2.5" 
+                            class="w-full accent-emerald-400 bg-slate-800 rounded-lg appearance-none cursor-pointer h-2">
                     </div>
-                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div class="bg-gradient-to-r from-mint to-teal-500 h-full w-[22%] rounded-full"></div>
-                    </div>
-                    <div class="mt-3 flex items-center justify-between text-[10px] text-slate-400">
-                        <span>Cluster: <strong class="text-slate-300">us-east-1</strong></span>
-                        <span class="text-emerald-400"><i class="fa-solid fa-circle text-[8px] mr-1"></i>Healthy</span>
+                    <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                        <div>
+                            <span class="text-slate-500 block">Est. RAM/VRAM:</span>
+                            <strong id="estRam" class="text-white">7.2 GB</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Req. vCPUs:</span>
+                            <strong id="estCpu" class="text-white">12 Cores</strong>
+                        </div>
                     </div>
                 </div>
             </div>
-        </aside>
+        </section>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/40 relative">
-
-            <!-- 1. DASHBOARD VIEW -->
-            <section id="view-dashboard" class="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto space-y-6">
-                <!-- Welcome Banner -->
-                <div class="glass-card p-6 rounded-2xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-mint/10 rounded-full blur-3xl pointer-events-none"></div>
-                    <div class="space-y-1 z-10">
-                        <div class="flex items-center space-x-2 text-xs text-mint font-medium">
-                            <i class="fa-solid fa-robot"></i>
-                            <span>Autonomous Robotic CI/CD Fleet Active</span>
-                        </div>
-                        <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Kabana Studio Dashboard</h1>
-                        <p class="text-xs md:text-sm text-slate-400 max-w-xl">Automated build bots and robotic CI daemons are continuously compiling repositories and monitoring runtime containers.</p>
-                    </div>
-                    <div class="flex items-center space-x-3 z-10">
-                        <button onclick="triggerGlobalBuild()" class="px-4 py-2.5 rounded-xl bg-mint hover:bg-mint-600 text-slate-950 text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-mint/20 transition-all cursor-pointer">
-                            <i class="fa-solid fa-play"></i>
-                            <span>Trigger Robot Build</span>
-                        </button>
-                        <button onclick="switchTab('explorer')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center space-x-2 border border-white/10 transition-all">
-                            <i class="fa-solid fa-folder-open"></i>
-                            <span>Open Files</span>
-                        </button>
-                    </div>
+        <!-- Center & Right Panels: TensorBoard GUI Partition & Metrics -->
+        <section class="glass-panel rounded-2xl p-5 flex flex-col space-y-6 lg:col-span-2">
+            
+            <!-- Dashboard Controls & Status -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="font-semibold text-white text-lg flex items-center gap-2">
+                        <svg class="w-5 h-5 mint-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        TensorFlow GUI Partition & Metric Analysis
+                    </h2>
+                    <p class="text-xs text-slate-400">Real-time tensor state inspection across 2M partition channels</p>
                 </div>
-
-                <!-- Metrics Grid -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between text-slate-400 mb-2">
-                            <span class="text-xs font-medium">Robot Commits</span>
-                            <div class="w-8 h-8 rounded-lg bg-mint/10 text-mint flex items-center justify-center">
-                                <i class="fa-solid fa-code-commit text-sm"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="text-xl md:text-2xl font-bold text-white" id="metric-commits">312</div>
-                            <span class="text-[10px] text-emerald-400 flex items-center mt-1"><i class="fa-solid fa-arrow-trend-up mr-1"></i>+24 automated</span>
-                        </div>
-                    </div>
-
-                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between text-slate-400 mb-2">
-                            <span class="text-xs font-medium">Bot Success Rate</span>
-                            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                                <i class="fa-solid fa-check-circle text-sm"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="text-xl md:text-2xl font-bold text-white" id="metric-success">99.2%</div>
-                            <span class="text-[10px] text-emerald-400 flex items-center mt-1"><i class="fa-solid fa-bolt mr-1"></i>Avg bot build 38s</span>
-                        </div>
-                    </div>
-
-                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between text-slate-400 mb-2">
-                            <span class="text-xs font-medium">Active Services</span>
-                            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
-                                <i class="fa-solid fa-server text-sm"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="text-xl md:text-2xl font-bold text-white" id="metric-services">6 / 6</div>
-                            <span class="text-[10px] text-cyan-400 flex items-center mt-1"><i class="fa-solid fa-signal mr-1"></i>All operational</span>
-                        </div>
-                    </div>
-
-                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between text-slate-400 mb-2">
-                            <span class="text-xs font-medium">Runtime Environment</span>
-                            <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
-                                <i class="fa-solid fa-microchip text-sm"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="text-xl md:text-2xl font-bold text-white">Docker/k8s</div>
-                            <span class="text-[10px] text-purple-400 flex items-center mt-1"><i class="fa-solid fa-shield mr-1"></i>Robot Sandbox</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Builds & Services Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Recent Builds List -->
-                    <div class="lg:col-span-2 glass-card p-5 rounded-2xl flex flex-col space-y-4">
-                        <div class="flex items-center justify-between pb-3 border-b border-white/10">
-                            <div class="flex items-center space-x-2">
-                                <i class="fa-solid fa-hammer text-mint"></i>
-                                <h2 class="text-sm font-semibold text-white">Recent Robotic Pipeline Status</h2>
-                            </div>
-                            <button onclick="switchTab('git')" class="text-xs text-mint hover:underline flex items-center space-x-1">
-                                <span>View all builds</span>
-                                <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                            </button>
-                        </div>
-                        <div class="space-y-3" id="dashboard-builds-list">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
-
-                    <!-- Services Widget -->
-                    <div class="glass-card p-5 rounded-2xl flex flex-col space-y-4">
-                        <div class="flex items-center justify-between pb-3 border-b border-white/10">
-                            <div class="flex items-center space-x-2">
-                                <i class="fa-solid fa-network-wired text-mint"></i>
-                                <h2 class="text-sm font-semibold text-white">Active Services</h2>
-                            </div>
-                            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">Live</span>
-                        </div>
-                        <div class="space-y-3" id="dashboard-services-list">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 2. FILE EXPLORER & EDITOR VIEW -->
-            <section id="view-explorer" class="flex-1 hidden flex-col md:flex-row overflow-hidden">
-                <!-- File Tree Sidebar -->
-                <div class="w-full md:w-72 glass-sidebar flex flex-col border-r border-white/10 shrink-0">
-                    <div class="p-3 border-b border-white/10 flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Repository Files</span>
-                        <div class="flex items-center space-x-1">
-                            <button onclick="showToast('New file dialog opened', 'info')" class="w-7 h-7 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center transition-colors" title="New File">
-                                <i class="fa-solid fa-file-circle-plus text-xs"></i>
-                            </button>
-                            <button onclick="refreshFileExplorer()" class="w-7 h-7 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center transition-colors" title="Refresh">
-                                <i class="fa-solid fa-rotate text-xs"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Search Filter -->
-                    <div class="p-2 border-b border-white/5">
-                        <div class="relative">
-                            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-xs text-slate-500"></i>
-                            <input type="text" id="file-search-input" onkeyup="filterFileTree()" placeholder="Search files..." class="w-full bg-slate-900/80 text-xs text-slate-200 pl-8 pr-3 py-1.5 rounded-lg border border-white/5 focus:outline-none focus:border-mint/50">
-                        </div>
-                    </div>
-                    <!-- File Tree List -->
-                    <div class="flex-1 overflow-y-auto p-2 space-y-1 font-mono text-xs" id="file-tree-container">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-
-                <!-- Code Editor & Live Preview Area -->
-                <div class="flex-1 flex flex-col overflow-hidden bg-slate-950">
-                    <!-- Editor Top Bar / Tabs -->
-                    <div class="h-10 bg-slate-900/90 border-b border-white/10 flex items-center justify-between px-3 shrink-0">
-                        <div class="flex items-center space-x-2 overflow-x-auto" id="editor-tabs">
-                            <!-- Active Tabs -->
-                        </div>
-                        <div class="flex items-center space-x-2 shrink-0">
-                            <button onclick="runCodePreview()" class="px-3 py-1 rounded bg-mint/20 hover:bg-mint/30 text-mint text-xs font-medium flex items-center space-x-1.5 transition-colors border border-mint/30 cursor-pointer">
-                                <i class="fa-solid fa-play text-[10px]"></i>
-                                <span>Preview</span>
-                            </button>
-                            <button onclick="saveCurrentFile()" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center space-x-1.5 transition-colors border border-white/10">
-                                <i class="fa-solid fa-floppy-disk text-[10px]"></i>
-                                <span>Save</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Split Editor / Preview Panel -->
-                    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-                        <!-- Code Editor Area -->
-                        <div class="flex-1 flex flex-col overflow-hidden border-r border-white/10 relative">
-                            <div class="bg-slate-900/50 px-4 py-1 text-[11px] text-slate-400 font-mono border-b border-white/5 flex items-center justify-between">
-                                <span id="current-filepath">src/index.js</span>
-                                <span id="current-lang-badge" class="text-mint">JavaScript</span>
-                            </div>
-                            <div class="flex-1 flex overflow-hidden font-mono text-xs">
-                                <!-- Line Numbers -->
-                                <div class="w-12 bg-slate-950/60 text-slate-600 select-none py-3 text-right pr-3 space-y-1 overflow-hidden" id="editor-line-numbers">
-                                    1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10
-                                </div>
-                                <!-- Editable Textarea / Code Area -->
-                                <textarea id="code-editor-textarea" oninput="updateLineNumbers()" spellcheck="false" class="flex-1 bg-transparent text-slate-200 p-3 resize-none focus:outline-none font-mono text-xs leading-relaxed overflow-y-auto whitespace-pre"></textarea>
-                            </div>
-                        </div>
-
-                        <!-- Live Code Preview Box -->
-                        <div class="w-full lg:w-1/2 flex flex-col bg-slate-900/40 overflow-hidden border-t lg:border-t-0 border-white/10">
-                            <div class="bg-slate-900/80 px-4 py-2 border-b border-white/10 flex items-center justify-between">
-                                <div class="flex items-center space-x-2">
-                                    <i class="fa-solid fa-globe text-mint text-xs"></i>
-                                    <span class="text-xs font-medium text-slate-300">Live Preview Container</span>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <button onclick="refreshPreviewFrame()" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-white/5"><i class="fa-solid fa-rotate-right mr-1"></i>Reload</button>
-                                </div>
-                            </div>
-                            <div class="flex-1 bg-slate-950 p-2 flex flex-col items-center justify-center relative overflow-hidden" id="preview-container-wrapper">
-                                <iframe id="live-preview-frame" class="w-full h-full rounded-lg bg-white border border-white/10"></iframe>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 3. GIT COMMITS & BUILDS VIEW -->
-            <section id="view-git" class="flex-1 hidden flex-col p-4 md:p-6 overflow-y-auto space-y-6">
-                <!-- Git Header & Actions -->
-                <div class="glass-card p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center space-x-2 text-xs text-mint font-medium">
-                            <i class="fa-solid fa-robot"></i>
-                            <span>Autonomous Robotic Version Control & CI/CD</span>
-                        </div>
-                        <h2 class="text-lg font-bold text-white">Robotic Commit History & Automated Builds</h2>
-                        <p class="text-xs text-slate-400">Inspect automated robot signatures, CI runner logs, and test execution results.</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button onclick="triggerGlobalBuild()" class="px-4 py-2 rounded-xl bg-mint hover:bg-mint-600 text-slate-950 text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-mint/20 cursor-pointer">
-                            <i class="fa-solid fa-play"></i>
-                            <span>Run Robot Pipeline</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Commits & Builds Two Column Layout -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Commit History -->
-                    <div class="glass-card p-5 rounded-2xl flex flex-col space-y-4">
-                        <div class="flex items-center justify-between pb-3 border-b border-white/10">
-                            <div class="flex items-center space-x-2">
-                                <i class="fa-solid fa-code-commit text-mint"></i>
-                                <h3 class="text-sm font-semibold text-white">Robotic Commit Log</h3>
-                            </div>
-                            <span class="text-xs font-mono text-slate-400">HEAD -> main</span>
-                        </div>
-                        <div class="space-y-3 overflow-y-auto max-h-[450px]" id="git-commits-list">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
-
-                    <!-- Build Logs & Runner Console -->
-                    <div class="glass-card p-5 rounded-2xl flex flex-col space-y-4">
-                        <div class="flex items-center justify-between pb-3 border-b border-white/10">
-                            <div class="flex items-center space-x-2">
-                                <i class="fa-solid fa-terminal text-mint"></i>
-                                <h3 class="text-sm font-semibold text-white">Autonomous CI/CD Console</h3>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                <span class="text-[10px] text-emerald-400 font-mono">Robot Daemon Active</span>
-                            </div>
-                        </div>
-                        <!-- Console Output Window -->
-                        <div class="flex-1 bg-slate-950 p-3 rounded-xl border border-white/10 font-mono text-xs text-slate-300 min-h-[350px] max-h-[400px] overflow-y-auto space-y-1.5" id="build-console-output">
-                            <div class="text-slate-500">[00:00:01] Kabana Studio Robot CI Daemon initialized.</div>
-                            <div class="text-slate-400">[00:00:02] Loading environment keys from secure vault...</div>
-                            <div class="text-emerald-400">[00:00:03] Success: Robot authentication verified.</div>
-                            <div class="text-slate-400">[00:00:04] Spawning Docker build container (node:20-alpine)...</div>
-                            <div class="text-slate-300">[00:00:06] Installing dependencies via ci-runner@kabana.studio...</div>
-                            <div class="text-mint">[00:00:12] All robotic test suites passed. Build artifact generated.</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 4. RAW JSON SCHEMA VIEW -->
-            <section id="view-schema" class="flex-1 hidden flex-col p-4 md:p-6 overflow-y-auto space-y-6">
-                <div class="glass-card p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center space-x-2 text-xs text-mint font-medium">
-                            <i class="fa-solid fa-database"></i>
-                            <span>Underlying Data Schema</span>
-                        </div>
-                        <h2 class="text-lg font-bold text-white">Complete Kabana Studio Repository JSON Schema</h2>
-                        <p class="text-xs text-slate-400">View, copy, or export the full embedded JSON structure featuring robotic commit authors and automated runtimes.</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button onclick="copyRawJson()" class="px-4 py-2 rounded-xl bg-mint hover:bg-mint-600 text-slate-950 text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-mint/20 cursor-pointer">
-                            <i class="fa-solid fa-copy"></i>
-                            <span>Copy JSON</span>
-                        </button>
-                        <button onclick="downloadJsonFile()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center space-x-2 border border-white/10">
-                            <i class="fa-solid fa-download"></i>
-                            <span>Export .json</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="glass-card p-4 rounded-2xl flex-1 flex flex-col">
-                    <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10 text-xs font-mono text-slate-400">
-                        <span>kabana_workspace_schema.json</span>
-                        <span id="json-stats-size" class="text-mint">~12.8 KB</span>
-                    </div>
-                    <pre class="flex-1 bg-slate-950 p-4 rounded-xl border border-white/10 font-mono text-xs text-slate-300 overflow-x-auto max-h-[500px]" id="raw-json-display"></pre>
-                </div>
-            </section>
-
-        </main>
-    </div>
-
-    <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
-
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
-        <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-white/10 shadow-2xl space-y-6">
-            <div class="flex items-center justify-between pb-3 border-b border-white/10">
-                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-gear text-mint"></i>
-                    <span>Kabana Studio Settings</span>
-                </h3>
-                <button onclick="closeSettingsModal()" class="w-7 h-7 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center">
-                    <i class="fa-solid fa-xmark"></i>
+                <button onclick="triggerDiagnostics()" class="mint-bg text-slate-950 font-bold px-4 py-2 rounded-xl text-xs hover:opacity-90 transition shadow-lg shadow-emerald-900/20">
+                    Run Diagnostic Scan
                 </button>
             </div>
-            <div class="space-y-4 text-xs">
-                <div>
-                    <label class="block text-slate-400 mb-1">Workspace Name</label>
-                    <input type="text" id="settings-repo-name" value="kabana-enterprise-core" class="w-full bg-slate-900 text-slate-200 px-3 py-2 rounded-xl border border-white/10 focus:outline-none focus:border-mint">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">Runtime Container Environment</label>
-                    <select id="settings-runtime" class="w-full bg-slate-900 text-slate-200 px-3 py-2 rounded-xl border border-white/10 focus:outline-none focus:border-mint">
-                        <option value="node-20">Node.js 20.11 LTS (Alpine)</option>
-                        <option value="python-3.11">Python 3.11 FastAPI</option>
-                        <option value="go-1.22">Go 1.22 Standard</option>
-                    </select>
-                </div>
-                <div class="flex items-center justify-between pt-2">
-                    <span class="text-slate-300">Live Auto-Preview Sync</span>
-                    <input type="checkbox" id="settings-auto-sync" checked class="accent-mint w-4 h-4 rounded">
-                </div>
-            </div>
-            <div class="flex items-center justify-end space-x-3 pt-4 border-t border-white/10">
-                <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700">Cancel</button>
-                <button onclick="saveSettingsModal()" class="px-4 py-2 rounded-xl bg-mint text-slate-950 font-semibold hover:bg-mint-600">Save Changes</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- Embedded Application JavaScript & JSON Schema -->
+            <!-- Metric Cards Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400 block">CPU Utilization</span>
+                    <span id="metricCpu" class="text-xl font-bold text-white mt-1 block">42.8%</span>
+                    <span class="text-[10px] text-emerald-400 mt-1 block">Optimal Load Range</span>
+                </div>
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400 block">GPU Core Load</span>
+                    <span id="metricGpu" class="text-xl font-bold mint-accent mt-1 block">88.4%</span>
+                    <span class="text-[10px] text-slate-400 mt-1 block">Tensor Cores Active</span>
+                </div>
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400 block">Anomaly Rate</span>
+                    <span id="metricAnomaly" class="text-xl font-bold text-amber-400 mt-1 block">0.012%</span>
+                    <span class="text-[10px] text-amber-400/80 mt-1 block">2 Flags Isolated</span>
+                </div>
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400 block">Memory Bandwidth</span>
+                    <span id="metricMem" class="text-xl font-bold text-white mt-1 block">64.2 GB/s</span>
+                    <span class="text-[10px] text-emerald-400 mt-1 block">PCIe Gen4 x16</span>
+                </div>
+            </div>
+
+            <!-- Charts Container -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                    <h3 class="text-xs font-semibold text-slate-300 mb-3">CPU vs GPU Metric Stream</h3>
+                    <div class="h-48 relative">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                    <h3 class="text-xs font-semibold text-slate-300 mb-3">Anomaly Partition Spread</h3>
+                    <div class="h-48 relative">
+                        <canvas id="anomalyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Diagnostic Terminal Output -->
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 code-font text-xs text-slate-300 space-y-1.5 max-h-40 overflow-y-auto">
+                <div class="text-slate-500">[09:53:00] Initializing Snowflake Snowpark Container Runtime...</div>
+                <div class="text-emerald-400">[09:53:01] Connected to secure data share. Scanning 2,000,000 package manifests...</div>
+                <div class="text-slate-300">[09:53:02] TensorBoard GUI Partition established on port 6006.</div>
+                <div class="text-amber-400">[09:53:03] Warning: Minor memory gradient saturation detected in partition tensor #44921.</div>
+                <div class="text-emerald-400" id="terminalLive">[09:53:04] Diagnostic engine ready. Monitoring source consumption benchmarks.</div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-panel border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        Snowflake Multi-Cloud Diagnostic Warehouse & TensorFlow Analytics Engine • Secure Enterprise Isolation
+    </footer>
+
+    <!-- Script Logic -->
     <script>
-        // ==========================================
-        // 1. EMBEDDED KABANA STUDIO JSON SCHEMA (ROBOT USERS)
-        // ==========================================
-        const kabanaStudioData = {
-            "metadata": {
-                "application": "Kabana Studio",
-                "version": "4.5.0-enterprise-robot",
-                "schemaVersion": "2026.2",
-                "workspace": "kabana-enterprise-core",
-                "author": "Kabana Autonomous Bot Fleet",
-                "description": "Enterprise workspace schema with robotic commit authors and automated CI/CD runners."
-            },
-            "repository": {
-                "name": "kabana-enterprise-core",
-                "branch": "main",
-                "remote": "https://github.com/kabana-studio/enterprise-core.git",
-                "lastCommit": "c8e92f4",
-                "license": "MIT",
-                "defaultEnvironment": "production"
-            },
-            "runtimeEnvironments": [
-                {
-                    "id": "rt-node20",
-                    "name": "Node.js 20.11 LTS Alpine",
-                    "status": "running",
-                    "port": 3000,
-                    "memoryLimit": "2GB",
-                    "cpuShares": 1024,
-                    "clusterNodes": 4
-                },
-                {
-                    "id": "rt-redis",
-                    "name": "Redis Enterprise Cache",
-                    "status": "running",
-                    "port": 6379,
-                    "memoryLimit": "512MB",
-                    "cpuShares": 512,
-                    "clusterNodes": 2
-                },
-                {
-                    "id": "rt-postgres",
-                    "name": "PostgreSQL 16 Cluster",
-                    "status": "running",
-                    "port": 5432,
-                    "memoryLimit": "1GB",
-                    "cpuShares": 1024,
-                    "clusterNodes": 1
-                }
-            ],
-            "environmentVariables": {
-                "NODE_ENV": "production",
-                "PORT": "3000",
-                "DATABASE_URL": "postgresql://postgres:securesetup@localhost:5432/kabana_prod",
-                "REDIS_URL": "redis://default:kabana_cache@localhost:6379",
-                "JWT_SECRET": "kabanasecuretoken99827316538",
-                "LOG_LEVEL": "info",
-                "ENABLE_TELEMETRY": "true",
-                "MINT_ACCENT_COLOR": "#42BA96"
-            },
-            "services": [
-                { "name": "API Gateway", "status": "operational", "latency": "12ms", "uptime": "99.99%" },
-                { "name": "Auth Service", "status": "operational", "latency": "19ms", "uptime": "100%" },
-                { "name": "Build Runner CI", "status": "operational", "latency": "38ms", "uptime": "99.96%" },
-                { "name": "Web Dashboard", "status": "operational", "latency": "15ms", "uptime": "100%" },
-                { "name": "Asset CDN", "status": "operational", "latency": "8ms", "uptime": "100%" },
-                { "name": "Worker Queue", "status": "operational", "latency": "27ms", "uptime": "99.99%" }
-            ],
-            "builds": [
-                {
-                    "id": "build-895",
-                    "commit": "c8e92f4",
-                    "author": "Build Bot <build-bot@kabana.io>",
-                    "status": "success",
-                    "duration": "39s",
-                    "timestamp": "2 mins ago",
-                    "message": "feat(studio): add comprehensive enterprise json configuration schema"
-                },
-                {
-                    "id": "build-894",
-                    "commit": "a4f89c2",
-                    "author": "CI Runner Bot <ci-runner@kabana.studio>",
-                    "status": "success",
-                    "duration": "42s",
-                    "timestamp": "15 mins ago",
-                    "message": "feat(dashboard): integrate Linux Mint glassmorphism UI"
-                },
-                {
-                    "id": "build-893",
-                    "commit": "7b311e0",
-                    "author": "Auto Deploy <auto-deploy@kabana.internal>",
-                    "status": "success",
-                    "duration": "38s",
-                    "timestamp": "2 hours ago",
-                    "message": "fix(runtime): resolve memory leak in worker thread pool"
-                }
-            ],
-            "commits": [
-                {
-                    "hash": "c8e92f4",
-                    "author": "Build Bot <build-bot@kabana.io>",
-                    "date": "2026-06-12 14:45:00",
-                    "message": "feat(studio): add comprehensive enterprise json configuration schema",
-                    "filesChanged": 5,
-                    "additions": 310,
-                    "deletions": 15
-                },
-                {
-                    "hash": "a4f89c2",
-                    "author": "CI Runner Bot <ci-runner@kabana.studio>",
-                    "date": "2026-06-12 14:10:00",
-                    "message": "feat(dashboard): integrate Linux Mint glassmorphism UI",
-                    "filesChanged": 8,
-                    "additions": 412,
-                    "deletions": 53
-                },
-                {
-                    "hash": "7b311e0",
-                    "author": "Auto Deploy <auto-deploy@kabana.internal>",
-                    "date": "2026-06-12 11:25:40",
-                    "message": "fix(runtime): resolve memory leak in worker thread pool",
-                    "filesChanged": 3,
-                    "additions": 45,
-                    "deletions": 22
-                },
-                {
-                    "hash": "3c912fa",
-                    "author": "Kabana Robot <bot@kabana.studio>",
-                    "date": "2026-06-12 09:14:12",
-                    "message": "chore(deps): upgrade tailwindcss to v3.4.1",
-                    "filesChanged": 2,
-                    "additions": 12,
-                    "deletions": 14
-                },
-                {
-                    "hash": "9f182bc",
-                    "author": "CI Runner Bot <ci-runner@kabana.studio>",
-                    "date": "2026-06-11 18:40:05",
-                    "message": "feat(explorer): add syntax highlighting & file previewer",
-                    "filesChanged": 11,
-                    "additions": 890,
-                    "deletions": 120
-                }
-            ],
-            "files": {
-                "src/index.js": {
-                    "language": "javascript",
-                    "size": "2.6 KB",
-                    "content": `/**
- * Kabana Studio Core Server Entrypoint
- * Mint Green & Glassmorphic Engine v4.5
- */
-const express = require('express');
-const http = require('http');
-const { initRuntimeCluster } = require('./cluster');
+        // Range slider listener for ML app size calculations
+        const rangeInput = document.getElementById('appSizeRange');
+        const sizeLabel = document.getElementById('sizeLabel');
+        const estRam = document.getElementById('estRam');
+        const estCpu = document.getElementById('estCpu');
 
-const app = express();
-const server = http.createServer(app);
-const PORT = process.env.PORT || 3000;
-
-app.use(express.json());
-
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        runtime: 'Node.js 20.11 LTS',
-        accent: '#42BA96',
-        botAuthor: 'build-bot@kabana.io'
-    });
-});
-
-initRuntimeCluster(server).then(() => {
-    server.listen(PORT, () => {
-        console.log(\`Kabana Studio running on port \${PORT} with Mint accents.\`);
-    });
-});`
-                },
-                "src/cluster.js": {
-                    "language": "javascript",
-                    "size": "1.8 KB",
-                    "content": `/**
- * Cluster & Sandbox Supervisor
- */
-async function initRuntimeCluster(server) {
-    console.log('[Cluster] Initializing Docker sandbox containers via ci-runner@kabana.studio...');
-    return {
-        status: 'ready',
-        nodesActive: 6
-    };
-}
-
-module.exports = { initRuntimeCluster };`
-                },
-                "public/index.html": {
-                    "language": "html",
-                    "size": "3.1 KB",
-                    "content": `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Kabana Preview Widget</title>
-    <style>
-        body { font-family: system-ui, sans-serif; background: #0f172a; color: #fff; padding: 2rem; text-align: center; }
-        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2rem; border-radius: 1rem; }
-        h1 { color: #42BA96; margin-bottom: 0.5rem; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h1>Kabana Studio Live Preview</h1>
-        <p>Your workspace is compiled and rendering successfully by bot@kabana.studio.</p>
-        <button onclick="alert('Kabana robotic action triggered!')" style="background:#42BA96; border:none; padding:0.75rem 1.5rem; border-radius:0.5rem; color:#0f172a; font-weight:bold; cursor:pointer; margin-top:1rem;">Interactive Test</button>
-    </div>
-</body>
-</html>`
-                },
-                "package.json": {
-                    "language": "json",
-                    "size": "950 B",
-                    "content": `{
-  "name": "kabana-enterprise-core",
-  "version": "4.5.0",
-  "description": "Kabana Studio Linux Mint Cinnamon Edition",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "build": "webpack --mode production",
-    "test": "jest --coverage"
-  },
-  "dependencies": {
-    "express": "^4.19.2",
-    "dotenv": "^16.4.5",
-    "redis": "^4.6.13",
-    "pg": "^8.11.3"
-  }
-}`
-                }
-            }
-        };
-
-        let currentActiveTab = 'dashboard';
-        let currentFilePath = 'src/index.js';
-        let openTabs = ['src/index.js', 'package.json', 'public/index.html'];
-
-        // ==========================================
-        // INITIALIZATION ON WINDOW LOAD
-        // ==========================================
-        window.onload = function() {
-            renderDashboard();
-            renderFileTree();
-            renderGitCommits();
-            renderRawJson();
-            openFile(currentFilePath);
-            updateLineNumbers();
+        rangeInput.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            sizeLabel.textContent = val >= 1 ? `${val} GB` : `${(val * 1000).toFixed(0)} MB`;
             
-            document.getElementById('repo-name-display').innerText = kabanaStudioData.repository.name;
-            document.getElementById('settings-repo-name').value = kabanaStudioData.repository.name;
-        };
+            // Calculate requirements dynamically
+            let ramVal = (val * 2.8 + 1.2).toFixed(1);
+            let cpuVal = Math.min(64, Math.max(2, Math.round(val * 1.5 + 2)));
+            
+            estRam.textContent = `${ramVal} GB`;
+            estCpu.textContent = `${cpuVal} Cores`;
+        });
 
-        // ==========================================
-        // TAB SWITCHING LOGIC
-        // ==========================================
-        function switchTab(tabId) {
-            currentActiveTab = tabId;
-            const tabs = ['dashboard', 'explorer', 'git', 'schema'];
-            tabs.forEach(t => {
-                const viewElem = document.getElementById(`view-${t}`);
-                const navElem = document.getElementById(`nav-${t}`);
-                if (t === tabId) {
-                    viewElem.classList.remove('hidden');
-                    viewElem.classList.add('flex');
-                    if (navElem) {
-                        navElem.classList.add('tab-active', 'text-slate-100');
-                        navElem.classList.remove('text-slate-400');
+        // Initialize Chart.js Performance Visualizations
+        const perfCtx = document.getElementById('performanceChart').getContext('2d');
+        const perfChart = new Chart(perfCtx, {
+            type: 'line',
+            data: {
+                labels: ['T-5m', 'T-4m', 'T-3m', 'T-2m', 'T-1m', 'Now'],
+                datasets: [
+                    {
+                        label: 'GPU Core Load (%)',
+                        data: [65, 72, 80, 85, 78, 88],
+                        borderColor: '#42BA96',
+                        backgroundColor: 'rgba(66, 186, 150, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'CPU Utilization (%)',
+                        data: [30, 45, 38, 50, 40, 42],
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'transparent',
+                        tension: 0.4
                     }
-                } else {
-                    viewElem.classList.add('hidden');
-                    viewElem.classList.remove('flex');
-                    if (navElem) {
-                        navElem.classList.remove('tab-active', 'text-slate-100');
-                        navElem.classList.add('text-slate-400');
-                    }
-                }
-            });
-            showToast(`Switched to ${tabId.toUpperCase()} view`, 'info');
-        }
-
-        // ==========================================
-        // DASHBOARD RENDERER
-        // ==========================================
-        function renderDashboard() {
-            const buildsList = document.getElementById('dashboard-builds-list');
-            buildsList.innerHTML = kabanaStudioData.builds.map(b => `
-                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-white/5 hover:border-mint/30 transition-all">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-lg flex items-center justify-center ${b.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}">
-                            <i class="fa-solid ${b.status === 'success' ? 'fa-robot' : 'fa-xmark'} text-xs"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs font-semibold text-white flex items-center space-x-2">
-                                <span>Build #${b.id.replace('build-', '')}</span>
-                                <span class="text-[10px] font-mono text-mint px-1.5 py-0.5 rounded bg-mint/10">${b.commit}</span>
-                            </div>
-                            <p class="text-[11px] text-slate-400 truncate max-w-xs md:max-w-md">${b.message}</p>
-                            <span class="text-[10px] text-mint/80 font-mono">${b.author}</span>
-                        </div>
-                    </div>
-                    <div class="text-right shrink-0">
-                        <span class="text-[11px] text-slate-300 font-medium">${b.duration}</span>
-                        <p class="text-[10px] text-slate-500">${b.timestamp}</p>
-                    </div>
-                </div>
-            `).join('');
-
-            const servicesList = document.getElementById('dashboard-services-list');
-            servicesList.innerHTML = kabanaStudioData.services.map(s => `
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/40 border border-white/5">
-                    <div class="flex items-center space-x-2.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-500/50"></span>
-                        <span class="text-xs font-medium text-slate-200">${s.name}</span>
-                    </div>
-                    <div class="flex items-center space-x-3 text-[11px] font-mono text-slate-400">
-                        <span>${s.latency}</span>
-                        <span class="text-emerald-400">${s.uptime}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // ==========================================
-        // FILE EXPLORER & EDITOR LOGIC
-        // ==========================================
-        function renderFileTree() {
-            const container = document.getElementById('file-tree-container');
-            const files = Object.keys(kabanaStudioData.files);
-            
-            container.innerHTML = files.map(path => {
-                const isActive = path === currentFilePath;
-                const isFolder = path.includes('/');
-                const fileName = isFolder ? path.split('/').pop() : path;
-                const folderName = isFolder ? path.split('/')[0] + '/' : '';
-                
-                return `
-                    <div onclick="openFile('${path}')" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${isActive ? 'bg-mint/15 text-mint font-semibold border border-mint/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}">
-                        <div class="flex items-center space-x-2 truncate">
-                            <i class="fa-regular ${path.endsWith('.js') ? 'fa-file-js text-amber-400' : path.endsWith('.html') ? 'fa-file-code text-rose-400' : path.endsWith('.json') ? 'fa-file-code text-emerald-400' : 'fa-file-lines text-blue-400'}"></i>
-                            <span class="truncate text-xs"><span class="text-slate-500 text-[10px]">${folderName}</span>${fileName}</span>
-                        </div>
-                        <span class="text-[10px] text-slate-500 font-mono">${kabanaStudioData.files[path].size}</span>
-                    </div>
-                `;
-            }).join('');
-
-            renderEditorTabs();
-        }
-
-        function renderEditorTabs() {
-            const tabsContainer = document.getElementById('editor-tabs');
-            tabsContainer.innerHTML = openTabs.map(path => {
-                const isActive = path === currentFilePath;
-                const name = path.split('/').pop();
-                return `
-                    <div onclick="openFile('${path}')" class="flex items-center space-x-2 px-3 py-1.5 rounded-t-lg cursor-pointer text-xs font-mono border-t ${isActive ? 'bg-slate-950 text-mint border-mint border-x border-x-white/10' : 'text-slate-400 hover:text-slate-200 bg-slate-900/50 border-transparent'}">
-                        <span>${name}</span>
-                        <button onclick="event.stopPropagation(); closeTab('${path}')" class="hover:text-rose-400 ml-1"><i class="fa-solid fa-xmark text-[10px]"></i></button>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function openFile(path) {
-            if (!kabanaStudioData.files[path]) return;
-            currentFilePath = path;
-            if (!openTabs.includes(path)) {
-                openTabs.push(path);
-            }
-            
-            document.getElementById('current-filepath').innerText = path;
-            const lang = kabanaStudioData.files[path].language;
-            document.getElementById('current-lang-badge').innerText = lang.toUpperCase();
-            document.getElementById('code-editor-textarea').value = kabanaStudioData.files[path].content;
-            
-            updateLineNumbers();
-            renderFileTree();
-            
-            if (path.endsWith('.html')) {
-                runCodePreview();
-            }
-        }
-
-        function closeTab(path) {
-            openTabs = openTabs.filter(p => p !== path);
-            if (openTabs.length === 0) {
-                openTabs.push(Object.keys(kabanaStudioData.files)[0]);
-            }
-            if (currentFilePath === path) {
-                openFile(openTabs[0]);
-            } else {
-                renderEditorTabs();
-            }
-        }
-
-        function updateLineNumbers() {
-            const textarea = document.getElementById('code-editor-textarea');
-            const lines = textarea.value.split('\n').length;
-            let lineNumbersHtml = '';
-            for (let i = 1; i <= Math.max(lines, 10); i++) {
-                lineNumbersHtml += i + '<br>';
-            }
-            document.getElementById('editor-line-numbers').innerHTML = lineNumbersHtml;
-        }
-
-        function saveCurrentFile() {
-            const content = document.getElementById('code-editor-textarea').value;
-            if (kabanaStudioData.files[currentFilePath]) {
-                kabanaStudioData.files[currentFilePath].content = content;
-                const sizeKB = (content.length / 1024).toFixed(1) + ' KB';
-                kabanaStudioData.files[currentFilePath].size = sizeKB;
-                showToast(`Successfully saved ${currentFilePath}`, 'success');
-                renderFileTree();
-                renderRawJson();
-                if (currentFilePath.endsWith('.html')) {
-                    runCodePreview();
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#94a3b8', boxWidth: 12, font: { size: 10 } } } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 10 } }, max: 100 }
                 }
             }
-        }
+        });
 
-        function runCodePreview() {
-            const previewFrame = document.getElementById('live-preview-frame');
-            const htmlContent = kabanaStudioData.files['public/index.html'] ? kabanaStudioData.files['public/index.html'].content : '<h1>No HTML Preview</h1>';
-            
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const blobUrl = URL.createObjectURL(blob);
-            previewFrame.src = blobUrl;
-            showToast('Live preview container refreshed', 'success');
-        }
-
-        function refreshPreviewFrame() {
-            runCodePreview();
-        }
-
-        function filterFileTree() {
-            const query = document.getElementById('file-search-input').value.toLowerCase();
-            const container = document.getElementById('file-tree-container');
-            const files = Object.keys(kabanaStudioData.files).filter(f => f.toLowerCase().includes(query));
-            
-            container.innerHTML = files.map(path => {
-                const isActive = path === currentFilePath;
-                return `
-                    <div onclick="openFile('${path}')" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${isActive ? 'bg-mint/15 text-mint font-semibold border border-mint/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}">
-                        <div class="flex items-center space-x-2 truncate">
-                            <i class="fa-regular fa-file-lines text-blue-400"></i>
-                            <span class="truncate text-xs">${path}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function refreshFileExplorer() {
-            renderFileTree();
-            showToast('File tree refreshed', 'info');
-        }
-
-        // ==========================================
-        // GIT COMMITS & BUILDS LOGIC
-        // ==========================================
-        function renderGitCommits() {
-            const container = document.getElementById('git-commits-list');
-            container.innerHTML = kabanaStudioData.commits.map(c => `
-                <div class="p-3 rounded-xl bg-slate-900/60 border border-white/5 hover:border-mint/30 transition-all space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-mono font-semibold text-mint bg-mint/10 px-2 py-0.5 rounded">${c.hash}</span>
-                        <span class="text-[10px] text-slate-500">${c.date}</span>
-                    </div>
-                    <p class="text-xs font-medium text-white">${c.message}</p>
-                    <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-white/5">
-                        <span class="text-mint font-mono">${c.author}</span>
-                        <div class="space-x-2 font-mono">
-                            <span class="text-emerald-400">+${c.additions}</span>
-                            <span class="text-rose-400">-${c.deletions}</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function triggerGlobalBuild() {
-            switchTab('git');
-            const consoleBox = document.getElementById('build-console-output');
-            const now = new Date().toLocaleTimeString();
-            
-            consoleBox.innerHTML += `
-                <div class="text-mint">[${now}] Triggering automated robot CI/CD build pipeline...</div>
-                <div class="text-slate-400">[${now}] Authenticating robot user <span class="text-mint">ci-runner@kabana.studio</span>...</div>
-                <div class="text-slate-300">[${now}] Executing automated test suite and container linting...</div>
-            `;
-            
-            setTimeout(() => {
-                consoleBox.innerHTML += `
-                    <div class="text-emerald-400">[${new Date().toLocaleTimeString()}] Robot Build Success! All tests verified by build-bot@kabana.io.</div>
-                `;
-                consoleBox.scrollTop = consoleBox.scrollHeight;
-                showToast('Robotic build completed successfully!', 'success');
-            }, 1200);
-
-            consoleBox.scrollTop = consoleBox.scrollHeight;
-            showToast('Robot build runner initiated...', 'info');
-        }
-
-        // ==========================================
-        // RAW JSON SCHEMA LOGIC
-        // ==========================================
-        function renderRawJson() {
-            const jsonString = JSON.stringify(kabanaStudioData, null, 2);
-            document.getElementById('raw-json-display').innerText = jsonString;
-            document.getElementById('json-stats-size').innerText = `${(jsonString.length / 1024).toFixed(1)} KB`;
-        }
-
-        function copyRawJson() {
-            const jsonString = JSON.stringify(kabanaStudioData, null, 2);
-            const textarea = document.createElement('textarea');
-            textarea.value = jsonString;
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showToast('Repository JSON with robot authors copied!', 'success');
-            } catch (err) {
-                showToast('Failed to copy JSON', 'error');
-            }
-            document.body.removeChild(textarea);
-        }
-
-        function downloadJsonFile() {
-            const jsonString = JSON.stringify(kabanaStudioData, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'kabana_workspace_schema.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            showToast('JSON file downloaded successfully', 'success');
-        }
-
-        // ==========================================
-        // MODAL & TOAST SYSTEM
-        // ==========================================
-        function openSettingsModal() {
-            document.getElementById('settings-modal').classList.remove('hidden');
-            document.getElementById('settings-modal').classList.add('flex');
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settings-modal').classList.remove('flex');
-            document.getElementById('settings-modal').classList.add('hidden');
-        }
-
-        function saveSettingsModal() {
-            const repoName = document.getElementById('settings-repo-name').value;
-            kabanaStudioData.repository.name = repoName;
-            document.getElementById('repo-name-display').innerText = repoName;
-            closeSettingsModal();
-            showToast('Settings saved successfully', 'success');
-            renderRawJson();
-        }
-
-        function toggleMaximize() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    showToast('Fullscreen mode not permitted', 'info');
-                });
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
+        const anomalyCtx = document.getElementById('anomalyChart').getContext('2d');
+        const anomalyChart = new Chart(anomalyCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Memory Leak', 'Tensor Drift', 'Latency Spike', 'GPU Throttle', 'I/O Stall'],
+                datasets: [{
+                    label: 'Anomaly Events',
+                    data: [2, 5, 1, 0, 3],
+                    backgroundColor: ['#f59e0b', '#ef4444', '#38bdf8', '#42BA96', '#a855f7'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 9 } } },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } }
                 }
             }
-        }
+        });
 
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            
-            let bgClass = 'bg-slate-900 border-mint/30 text-slate-200';
-            let icon = 'fa-circle-info text-mint';
-            
-            if (type === 'success') {
-                bgClass = 'bg-slate-900 border-emerald-500/30 text-slate-200';
-                icon = 'fa-circle-check text-emerald-400';
-            } else if (type === 'error') {
-                bgClass = 'bg-slate-900 border-rose-500/30 text-slate-200';
-                icon = 'fa-triangle-exclamation text-rose-400';
-            }
-            
-            toast.className = `glass-card px-4 py-3 rounded-xl border shadow-xl flex items-center space-x-3 text-xs pointer-events-auto transition-all animate-bounce ${bgClass}`;
-            toast.innerHTML = `
-                <i class="fa-solid ${icon}"></i>
-                <span>${message}</span>
-            `;
-            
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+        function triggerDiagnostics() {
+            const terminal = document.getElementById('terminalLive');
+            const now = new Date().toTimeString().split(' ')[0];
+            terminal.innerHTML = `[${now}] Diagnostic scan executed across 2,000,000 libraries. Zero critical security faults found. TensorBoard partitions validated.`;
+            terminal.className = "text-emerald-400 font-bold";
         }
     </script>
 </body>
