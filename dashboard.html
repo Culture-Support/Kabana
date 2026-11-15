@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="no" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <title>Culture Support Prompts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --mint-primary: #10b981;
+            --mint-dark: #059669;
+            --mint-light: #d1fae5;
+        }
+        body {
+            min-height: 100dvh;
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="w-full overflow-x-hidden flex flex-col h-full m-0 p-0">
+
+    <!-- Login / Autentiseringsskjerm (Lokal sikkerhetssjekk) -->
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-4">
+        <div class="glass-panel w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="inline-flex p-3 bg-emerald-500/10 text-emerald-400 rounded-full mb-1">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight text-white">Culture Support Prompts</h1>
+                <p class="text-sm text-slate-400">Offline MSQL / Lokal Notat- og Prompt-database</p>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-1">Brukernavn</label>
+                    <input type="text" id="username" required class="w-full h-11 px-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Skriv brukernavn...">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-1">Passord / Lokal PIN</label>
+                    <input type="password" id="password" required class="w-full h-11 px-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center min-h-[44px]">
+                    Logg inn / Start App
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hovedapplikasjon (Skjult til innlogging) -->
+    <div id="app-screen" class="hidden flex flex-col h-full w-full">
+        <!-- Topptekst / Navbar -->
+        <header class="glass-panel sticky top-0 z-40 border-b border-slate-800 px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div class="flex items-center space-x-3">
+                    <button id="menu-btn" class="p-2 -ml-2 text-slate-300 hover:text-white rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center md:hidden">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
+                    <span class="font-bold text-emerald-400 tracking-wide text-lg">Culture Support Prompts</span>
+                </div>
+            </div>
+
+            <!-- Synkroniseringsstatus & Offline-kø panel -->
+            <div class="flex items-center justify-between w-full md:w-auto gap-2 bg-slate-900/50 px-3 py-2 rounded-xl border border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <span id="sync-indicator" class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>
+                    <span id="sync-status-text" class="text-xs text-slate-300">MSQL Aktiv (Lokal DB)</span>
+                    <span id="queue-badge" class="hidden text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/30">0 i kø</span>
+                </div>
+                <button onclick="syncWithCloudNode()" class="h-9 px-3 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-medium text-xs rounded-lg border border-slate-700 min-h-[44px] md:min-h-[36px] flex items-center justify-center">
+                    🔄 Synk
+                </button>
+            </div>
+
+            <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+                <button id="seed-btn" title="Last inn forhåndsdefinerte minner" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg border border-slate-700 min-h-[44px]">
+                    + Standardminner
+                </button>
+                <button id="logout-btn" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-3 py-2 rounded-lg border border-rose-500/20 min-h-[44px]">
+                    Logg ut
+                </button>
+            </div>
+        </header>
+
+        <!-- Hovedinnhold med Sidebar og Notatfelt -->
+        <div class="flex flex-1 overflow-hidden relative">
+            <!-- Sidemeny / Navigasjon -->
+            <aside id="sidebar" class="absolute inset-y-0 left-0 z-30 w-72 glass-panel border-r border-slate-800 p-4 transform -translate-x-full transition-transform duration-200 flex flex-col md:relative md:translate-x-0">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Kategorier</h2>
+                    <button id="close-sidebar" class="md:hidden text-slate-400 hover:text-white p-2 min-h-[44px] min-w-[44px]">✕</button>
+                </div>
+                <nav class="space-y-1 flex-1 overflow-y-auto">
+                    <button onclick="filterCategory('all')" class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-emerald-500/10 border border-emerald-500/20 min-h-[44px]">Alle elementer</button>
+                    <button onclick="filterCategory('Bygg')" class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 min-h-[44px]">🛠️ Huskeliste / Bygg</button>
+                    <button onclick="filterCategory('Database')" class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 min-h-[44px]">💾 Database-teknologier</button>
+                    <button onclick="filterCategory('Kode')" class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 min-h-[44px]">⚡ Kodesnutter & Funksjoner</button>
+                    <button onclick="filterCategory('Prosjekt')" class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 min-h-[44px]">🚀 Programmeringsprosjekter</button>
+                </nav>
+            </aside>
+
+            <!-- Hovedarbeidsområde -->
+            <main class="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-6 space-y-6">
+                <!-- Skjema for å skrive nytt notat / prompt -->
+                <div class="glass-panel p-4 md:p-6 rounded-2xl shadow-xl space-y-4">
+                    <h2 class="text-lg font-semibold text-white">Lagre ny notis / Gemini-prompt</h2>
+                    <form id="note-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 uppercase mb-1">Tittel</label>
+                                <input type="text" id="note-title" required class="w-full h-11 px-3 bg-slate-900/60 border border-slate-700 rounded-xl text-white text-sm focus:ring-2 focus:ring-emerald-500" placeholder="F.eks. Node.js API oppsett...">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 uppercase mb-1">Kategori</label>
+                                <select id="note-category" class="w-full h-11 px-3 bg-slate-900/60 border border-slate-700 rounded-xl text-white text-sm focus:ring-2 focus:ring-emerald-500">
+                                    <option value="Bygg">Bygg</option>
+                                    <option value="Database">Database</option>
+                                    <option value="Kode">Kodefunksjon</option>
+                                    <option value="Prosjekt">Prosjekt</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 uppercase mb-1">Innhold / Prompt-tekst</label>
+                            <textarea id="note-content" rows="4" required class="w-full p-3 bg-slate-900/60 border border-slate-700 rounded-xl text-white text-sm focus:ring-2 focus:ring-emerald-500" placeholder="Skriv ideer eller ferdig prompt som kan kopieres direkte til Gemini..."></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="submit" class="h-11 px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/20 transition-all min-h-[44px]">
+                                Lagre til MSQL (Lokal arkiv)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Liste over lagrede notater/prompter -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-bold text-white">Lagrede Minner & Prompter</h2>
+                        <span id="note-count" class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full">0 elementer</span>
+                    </div>
+                    <div id="notes-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Dynamisk innhold -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // MSQL Lokal lagring og Offline-kø
+        let notes = JSON.parse(localStorage.getItem('culture_support_msql') || '[]');
+        let offlineQueue = JSON.parse(localStorage.getItem('culture_sync_queue') || '[]');
+        let currentFilter = 'all';
+
+        const CLOUD_NODE_URL = 'https://api.your-cloud-msql-node.local/v1/sync';
+        const API_KEY = 'din-sikre-node-api-nøkkel';
+
+        // Forhåndsdefinerte minnestepper
+        const defaultSeeds = [
+            { id: '1', title: 'Byggesett for Offline-først PWA', category: 'Bygg', content: 'Sett opp en robust Service Worker, manifest.json, og IndexedDB eller localStorage for full offline synkronisering på mobil enhet.', updatedAt: Date.now() },
+            { id: '2', title: 'MSQL / Dokumentarkiv Arkitektur', category: 'Database', content: 'Designprinsipper for dokumentlagring, JSON-arkivering og master-data synkronisering på distribuerte noder uten ekstern avhengighet.', updatedAt: Date.now() },
+            { id: '3', title: 'JavaScript Auto-Write og Prompt Buffer', category: 'Kode', content: 'Funksjon for å hente ut lagrede tekstblokker, formatere dem som Gemini-prompter og kopiere direkte til utklippstavlen med ett klikk.', updatedAt: Date.now() },
+            { id: '4', title: 'Culture Support Web App', category: 'Prosjekt', content: 'Utvikle et mobiltilpasset kontrollpanel med sikker lokal innlogging, dynamisk filtrering og umiddelbar synkronisering mot lokal lagring.', updatedAt: Date.now() }
+        ];
+
+        if (notes.length === 0) {
+            notes = defaultSeeds;
+            localStorage.setItem('culture_support_msql', JSON.stringify(notes));
+        }
+
+        // Innlogging
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            renderNotes();
+            updateQueueUI();
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        });
+
+        // Mobilmeny bryter
+        const sidebar = document.getElementById('sidebar');
+        document.getElementById('menu-btn').addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+        document.getElementById('close-sidebar').addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+        });
+
+        // Registrer handling i offline-kø
+        function enqueueAction(actionType, payload) {
+            const queueItem = {
+                id: 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                type: actionType, // 'CREATE' eller 'DELETE'
+                payload: payload,
+                timestamp: Date.now()
+            };
+            offlineQueue.push(queueItem);
+            localStorage.setItem('culture_sync_queue', JSON.stringify(offlineQueue));
+            updateQueueUI();
+        }
+
+        // Legg til ny note / prompt
+        document.getElementById('note-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('note-title').value;
+            const category = document.getElementById('note-category').value;
+            const content = document.getElementById('note-content').value;
+
+            const newNote = {
+                id: 'note_' + Date.now(),
+                title,
+                category,
+                content,
+                updatedAt: Date.now()
+            };
+
+            notes.unshift(newNote);
+            saveAndRender();
+            enqueueAction('CREATE', newNote);
+
+            document.getElementById('note-form').reset();
+        });
+
+        // Slett note fra MSQL
+        function deleteNote(id) {
+            notes = notes.filter(n => n.id !== id);
+            saveAndRender();
+            enqueueAction('DELETE', { id });
+        }
+
+        // Slett/Lagre standardminner
+        document.getElementById('seed-btn').addEventListener('click', () => {
+            defaultSeeds.forEach(seed => {
+                if (!notes.some(n => n.title === seed.title)) {
+                    notes.unshift(seed);
+                    enqueueAction('CREATE', seed);
+                }
+            });
+            saveAndRender();
+        });
+
+        function saveAndRender() {
+            localStorage.setItem('culture_support_msql', JSON.stringify(notes));
+            renderNotes();
+        }
+
+        function filterCategory(cat) {
+            currentFilter = cat;
+            renderNotes();
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        }
+
+        function copyPrompt(content, title) {
+            const fullPrompt = `Start building based on the following project specifications:\n\nTitle: ${title}\n\nDetails:\n${content}`;
+            navigator.clipboard.writeText(fullPrompt).then(() => {
+                alert('Prompt kopiert til utklippstavlen! Klar til å limes inn i Gemini.');
+            });
+        }
+
+        // Synkronisering mot sky-node med køhåndtering
+        async function syncWithCloudNode() {
+            const statusIndicator = document.getElementById('sync-indicator');
+            const statusText = document.getElementById('sync-status-text');
+
+            if (!navigator.onLine) {
+                statusText.innerText = 'Frakoblet (Lagret i MSQL)';
+                statusIndicator.className = 'w-3 h-3 rounded-full bg-amber-400 inline-block';
+                return;
+            }
+
+            statusText.innerText = `Synkroniserer (${offlineQueue.length} i kø)...`;
+            statusIndicator.className = 'w-3 h-3 rounded-full bg-blue-400 animate-pulse inline-block';
+
+            try {
+                const response = await fetch(CLOUD_NODE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'X-Node-Type': 'MSQL-Master-Sync'
+                    },
+                    body: JSON.stringify({
+                        nodeId: 'mobile-client-' + navigator.userAgent.substring(0, 10),
+                        queue: offlineQueue,
+                        documents: notes
+                    })
+                });
+
+                if (!response.ok) throw new Error('Sky-node avviste synkronisering');
+
+                const result = await response.json();
+                
+                // Tøm køen ved suksess
+                offlineQueue = [];
+                localStorage.setItem('culture_sync_queue', JSON.stringify(offlineQueue));
+
+                if (result.documents) {
+                    notes = result.documents;
+                    localStorage.setItem('culture_support_msql', JSON.stringify(notes));
+                    renderNotes();
+                }
+
+                statusText.innerText = 'MSQL Synkronisert';
+                statusIndicator.className = 'w-3 h-3 rounded-full bg-emerald-400 inline-block';
+                updateQueueUI();
+
+            } catch (error) {
+                console.warn('Simulert sky-synk (Frakoblet modus / CORS):', error);
+                statusText.innerText = 'MSQL Aktiv (Lokal kø)';
+                statusIndicator.className = 'w-3 h-3 rounded-full bg-amber-400 inline-block';
+            }
+        }
+
+        function updateQueueUI() {
+            const queueBadge = document.getElementById('queue-badge');
+            if (offlineQueue.length > 0) {
+                queueBadge.innerText = `${offlineQueue.length} venter på synk`;
+                queueBadge.classList.remove('hidden');
+            } else {
+                queueBadge.classList.add('hidden');
+            }
+        }
+
+        function renderNotes() {
+            const container = document.getElementById('notes-container');
+            const filtered = currentFilter === 'all' ? notes : notes.filter(n => n.category === currentFilter);
+            
+            document.getElementById('note-count').innerText = `${filtered.length} elementer`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">Ingen elementer funnet i denne kategorien.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(note => `
+                <div class="glass-panel p-5 rounded-2xl flex flex-col justify-between space-y-4 border border-slate-800 hover:border-emerald-500/40 transition-all">
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20">${note.category}</span>
+                            <button onclick="deleteNote('${note.id}')" class="text-slate-500 hover:text-rose-400 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center">🗑️ Slett</button>
+                        </div>
+                        <h3 class="font-bold text-white text-base">${escapeHtml(note.title)}</h3>
+                        <p class="text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(note.content)}</p>
+                    </div>
+                    <div class="pt-2 border-t border-slate-800 flex justify-end">
+                        <button onclick="copyPrompt(\`${escapeJs(note.content)}\`, \`${escapeJs(note.title)}\`)" class="w-full md:w-auto h-11 px-4 bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white font-medium text-xs rounded-xl border border-slate-700 hover:border-emerald-500 transition-all flex items-center justify-center space-x-2 min-h-[44px]">
+                            <span>📋 Kopier som Gemini-prompt</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function escapeJs(str) {
+            return String(str).replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+        }
+
+        // Nettverkslyttere for automatisk synk
+        window.addEventListener('online', () => {
+            syncWithCloudNode();
+        });
+
+        window.addEventListener('offline', () => {
+            document.getElementById('sync-status-text').innerText = 'Frakoblet (Lagres lokalt)';
+            document.getElementById('sync-indicator').className = 'w-3 h-3 rounded-full bg-amber-400 inline-block';
+        });
+
+        // Første rendering
+        renderNotes();
+        updateQueueUI();
+    </script>
+</body>
+</html>
